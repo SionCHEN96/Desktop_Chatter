@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain, screen } = require('electron')
 const path = require('path')
 const axios = require('axios')
 
+// 解决WebGL问题的命令行参数
+app.commandLine.appendSwitch('ignore-gpu-blacklist')
+app.commandLine.appendSwitch('disable-gpu')
+app.commandLine.appendSwitch('disable-gpu-compositing')
+
 // 配置常量
 const LM_STUDIO_CONFIG = {
   BASE_URL: 'http://127.0.0.1:1234', // 完整的API基础地址
@@ -97,7 +102,9 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      webgl: true,
+      enablePreferredSizeMode: true
     }
   })
 
@@ -132,7 +139,7 @@ app.on('window-all-closed', () => {
 ipcMain.on('message', async (event, message) => {
   try {
     const reply = await getAIResponse(message)
-    mainWindow.webContents.send('reply', reply)
+    mainWindow.webContents.send('response', reply)
   } catch (error) {
     console.error('Error processing message:', error)
     mainWindow.webContents.send('reply', {

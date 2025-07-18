@@ -143,3 +143,26 @@ body {
 .chat-form button:hover {
   background-color: #005a9e;
 }
+
+/* 3D角色容器 */
+#character-container {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  right: 0;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+/* 调整消息位置 */
+.message.ai {
+  bottom: 310px; /* 在3D球体上方 */
+}
+
+/* 调整消息容器 */
+.chat-messages {
+  bottom: 320px; /* 在3D球体上方 */
+}
