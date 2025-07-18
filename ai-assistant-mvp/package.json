@@ -1,0 +1,25 @@
+{
+  "name": "ai-assistant-mvp",
+  "version": "1.0.0",
+  "description": "AI虚拟助手最小可行原型",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "@electron/remote": "^2.0.11",
+    "axios": "^1.6.2"
+  },
+  "keywords": [
+    "electron",
+    "ai",
+    "assistant"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.3.8",
+    "electron-builder": "^24.6.4"
+  }
+}
