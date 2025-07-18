@@ -24,21 +24,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 添加消息到聊天界面
   function addMessage(sender, text) {
-    const messageElement = document.createElement('div')
-    messageElement.className = `message ${sender}`
-    messageElement.textContent = text
-    chatMessages.appendChild(messageElement)
-    chatMessages.scrollTop = chatMessages.scrollHeight
-
-    // 设置消息自动消失
-    if (window.LM_STUDIO_CONFIG?.BUBBLE_TIMEOUT) {
-      setTimeout(() => {
-        messageElement.classList.add('fade-out')
-        setTimeout(() => {
-          messageElement.remove()
-        }, 500)
-      }, window.LM_STUDIO_CONFIG.BUBBLE_TIMEOUT)
+    if (sender === 'user') {
+      // 用户消息不显示，但保留发送功能
+      return;
     }
+
+    // 清除之前的AI消息
+    const aiMessages = chatMessages.querySelectorAll('.message.ai');
+    aiMessages.forEach(msg => msg.remove());
+
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${sender}`;
+    messageElement.textContent = text;
+    chatMessages.appendChild(messageElement);
+
+    // 设置消息10秒后自动消失
+    setTimeout(() => {
+      messageElement.classList.add('fade-out');
+      setTimeout(() => {
+        messageElement.remove();
+      }, 500);
+    }, 10000);
   }
 
   // 接收AI回复
