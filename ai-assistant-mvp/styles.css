@@ -147,22 +147,48 @@ body {
 /* 3D角色容器 */
 #character-container {
   position: absolute;
-  bottom: 100px;
+  bottom: 200px; /* 固定在顶部下方100px处 */
   left: 0;
   right: 0;
-  height: 200px;
+  height: 40px; /* 高度减小到40px */
   display: flex;
   justify-content: center;
   align-items: center;
   -webkit-app-region: no-drag;
+  z-index: 2; /* 确保在气泡上方 */
 }
 
-/* 调整消息位置 */
-.message.ai {
-  bottom: 310px; /* 在3D球体上方 */
-}
-
-/* 调整消息容器 */
+/* 消息容器 */
 .chat-messages {
-  bottom: 320px; /* 在3D球体上方 */
+  position: absolute;
+  bottom: 120px; /* 立方体下方10px (100px位置 + 40px高度 + 10px间距) */
+  left: 0;
+  right: 0;
+  height: auto;
+  overflow: visible !important;
+  -webkit-app-region: no-drag;
+  z-index: 1; /* 确保在立方体下方 */
+  display: flex;
+  justify-content: center;
+}
+
+/* 调整AI消息位置 */
+.message.ai {
+  display: block;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: black;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 18px;
+  padding: 12px 15px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  text-align: left; /* 文字左对齐 */
+  margin: 0 20px; /* 两侧留白 */
+}
+
+/* 确保只显示最新消息 */
+.chat-messages div:not(:last-child) {
+  display: none;
 }
