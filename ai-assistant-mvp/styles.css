@@ -14,33 +14,45 @@ body {
 }
 
 .chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 400px;
-  margin: 0;
-  background-color: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
+  position: relative;
+  width: 280px;
+  height: calc(100vh + 40px); /* 增加窗口高度 */
+  background-color: transparent;
   -webkit-app-region: drag;
-  box-shadow: 0 0 20px rgba(0,0,0,0.2);
-  border-radius: 10px;
-  overflow: hidden;
+  padding: 0;
 }
 
 .chat-messages {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 60px; /* 为输入框留出空间 */
+  padding: 10px;
+  overflow: hidden !important;
   -webkit-app-region: no-drag;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* 隐藏所有可能的滚动条 */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+body {
+  overflow: hidden !important;
 }
 
 .message {
-  margin-bottom: 15px;
-  padding: 12px 18px;
+  margin: 5px 0;
+  padding: 12px 15px;
   border-radius: 18px;
-  max-width: 80%;
+  max-width: 100%;
   word-wrap: break-word;
-  position: relative;
   opacity: 1;
   transition: opacity 0.5s ease-out;
 }
@@ -50,26 +62,64 @@ body {
 }
 
 .message.user {
-  align-self: flex-end;
-  background-color: rgba(0, 120, 212, 0.9);
-  color: white;
-  margin-left: 20%;
+  display: none;
 }
 
 .message.ai {
-  align-self: flex-start;
-  background-color: rgba(255, 255, 255, 0.9);
+  position: fixed;
+  bottom: 85px; /* 输入框高度(50px)+35px间距 */
+  left: 20px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.95);
   color: black;
-  margin-right: 20%;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 18px;
+  padding: 12px 15px;
+  max-height: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-form {
+  position: absolute;
+  bottom: 30px; /* 再上移10px (总共上移30px) */
+  left: 0;
+  right: 0;
   display: flex;
-  padding: 15px;
-  border-top: 1px solid rgba(221, 221, 221, 0.5);
-  background-color: rgba(255, 255, 255, 0.7);
+  padding: 10px;
+  background-color: transparent;
   -webkit-app-region: no-drag;
+  border-top: none;
+}
+
+.chat-form::after {
+  content: "";
+  position: absolute;
+  bottom: -20px; /* 再下移5px确保完全显示 */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #3498db;
+  -webkit-app-region: drag;
+}
+
+.chat-form input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.chat-form button {
+  padding: 8px 12px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .chat-form input {

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, screen } = require('electron')
 const path = require('path')
 const axios = require('axios')
 
@@ -8,7 +8,6 @@ const LM_STUDIO_CONFIG = {
   MODEL: 'deepseek/deepseek-r1-0528-qwen3-8b',    // 使用的模型名称
   TEMPERATURE: 0.7,       // 生成温度
   SYSTEM_PROMPT: 'You are a helpful AI assistant.', // 系统提示
-  BUBBLE_TIMEOUT: 10000   // 气泡保留时间(毫秒)
 }
 
 // 简单的URL验证函数
@@ -80,11 +79,16 @@ async function getAIResponse(message) {
 
 function createWindow() {
   // 创建浏览器窗口
+  const primaryDisplay = screen.getPrimaryDisplay()
+  const { width, height } = primaryDisplay.workAreaSize
+  const windowWidth = 400
+  const windowHeight = 600
+  
   mainWindow = new BrowserWindow({
-    width: 400,
-    height: 600,
-    x: 100,
-    y: 100,
+    width: windowWidth,
+    height: windowHeight,
+    x: width - windowWidth - 20,  // 20px from right edge
+    y: height - windowHeight - 160, // 再上移20px (总共上移140px)
     transparent: true,
     frame: false,
     alwaysOnTop: true,
