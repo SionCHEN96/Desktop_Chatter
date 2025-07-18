@@ -7,7 +7,8 @@ const LM_STUDIO_CONFIG = {
   BASE_URL: 'http://127.0.0.1:1234', // 完整的API基础地址
   MODEL: 'deepseek/deepseek-r1-0528-qwen3-8b',    // 使用的模型名称
   TEMPERATURE: 0.7,       // 生成温度
-  SYSTEM_PROMPT: 'You are a helpful AI assistant.' // 系统提示
+  SYSTEM_PROMPT: 'You are a helpful AI assistant.', // 系统提示
+  BUBBLE_TIMEOUT: 10000   // 气泡保留时间(毫秒)
 }
 
 // 简单的URL验证函数
@@ -80,8 +81,15 @@ async function getAIResponse(message) {
 function createWindow() {
   // 创建浏览器窗口
   mainWindow = new BrowserWindow({
-    width: 800,
+    width: 400,
     height: 600,
+    x: 100,
+    y: 100,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
