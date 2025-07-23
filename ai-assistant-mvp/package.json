@@ -5,12 +5,15 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@electron/remote": "^2.0.11",
+    "@pixiv/three-vrm": "^3.4.2",
+    "@pixiv/three-vrm-core": "^3.4.2",
     "axios": "^1.6.2",
-    "three": "^0.178.0"
+    "three": "^0.153.0"
   },
   "keywords": [
     "electron",
@@ -20,7 +23,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^27.3.8",
+    "electron": "^37.2.3",
     "electron-builder": "^24.6.4"
   }
 }
