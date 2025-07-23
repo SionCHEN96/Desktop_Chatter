@@ -23,16 +23,18 @@ body {
 }
 
 .chat-messages {
+  max-height: 80vh; /* 使用视窗高度百分比 */
+  overflow-y: auto; /* 允许垂直滚动 */
+  word-wrap: break-word;
   position: absolute;
-  top: 0;
+  top: -100px; /* 上移到 cube 上方 */
   left: 0;
   right: 0;
   bottom: 60px; /* 为输入框留出空间 */
   padding: 10px;
-  overflow: hidden !important;
+  width: 100%; /* 宽度与窗口同宽 */
   -webkit-app-region: no-drag;
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
+  z-index: 10; /* 确保气泡框位于 cube 上方 */
 }
 
 /* 隐藏所有可能的滚动条 */
@@ -66,18 +68,16 @@ body {
 }
 
 .message.ai {
-  position: fixed;
-  bottom: 85px; /* 输入框高度(50px)+35px间距 */
-  left: 20px;
-  right: 20px;
+  position: absolute;
   background-color: rgba(255, 255, 255, 0.95);
   color: black;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   border-radius: 18px;
   padding: 12px 15px;
-  max-height: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 80%;
+  word-wrap: break-word;
+  z-index: 10;
+  pointer-events: none;
 }
 
 .chat-form {
@@ -144,11 +144,7 @@ body {
   background-color: #005a9e;
 }
 
-/* 3D角色容器 */
-#character-container {
-  position: absolute;
-  bottom: 200px; /* 固定在顶部下方100px处 */
-  left: 0;
+
   right: 0;
   height: 40px; /* 高度减小到40px */
   display: flex;
@@ -160,6 +156,9 @@ body {
 
 /* 消息容器 */
 .chat-messages {
+  max-height: 400px;
+  overflow-y: auto;
+  word-wrap: break-word;
   position: absolute;
   bottom: 120px; /* 立方体下方10px (100px位置 + 40px高度 + 10px间距) */
   left: 0;
@@ -191,4 +190,15 @@ body {
 /* 确保只显示最新消息 */
 .chat-messages div:not(:last-child) {
   display: none;
+}
+
+/* 角色容器样式 */
+#character-container {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  right: 0;
+  height: 200px;
+  z-index: 5;
+  pointer-events: none;
 }
