@@ -38,13 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
       padding: 10px 15px;
       border-radius: 18px;
       max-width: 200px;
+      max-height: 300px;
+      overflow-y: auto;
       word-wrap: break-word;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       font-size: 14px;
-      transition: opacity 0.3s;
-    }
-    .message.ai.fade-out {
-      opacity: 0;
     }
   `;
   document.head.appendChild(style);
@@ -77,19 +75,20 @@ document.addEventListener('DOMContentLoaded', () => {
       // 固定位置，不再随立方体旋转而变化
       const containerRect = characterContainer.getBoundingClientRect();
       const centerX = containerRect.width / 2;
-
-      // 固定在character容器的上部位置
-      const fixedY = 0; // 固定在character容器顶部位置
-
+      
+      // 固定在character容器的上部位置，上移20px
+      const fixedY = -20; // 负值表示向上移动
+      
       // 定位气泡
       messageElement.style.position = 'absolute';
       messageElement.style.left = `${centerX - messageElement.offsetWidth / 2}px`;
-      messageElement.style.top = `${fixedY}px`;
+      messageElement.style.bottom = `${containerRect.height - fixedY}px`; // 固定底部位置
+      messageElement.style.top = 'auto'; // 取消top定位，使用bottom定位
     }
 
     // 初始定位
     updateBubblePosition();
-
+    
     // 不再需要动画更新气泡位置，因为位置已固定
 
     // 设置消息10秒后自动消失
@@ -97,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
       messageElement.classList.add('fade-out');
       setTimeout(() => {
         messageElement.remove();
-      }, 500);
+      }, 600); // 增加到600ms以匹配动画时长
     }, 10000);
   }
 

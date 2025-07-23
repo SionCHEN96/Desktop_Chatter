@@ -86,8 +86,8 @@ function createWindow() {
   // 创建浏览器窗口
   const primaryDisplay = screen.getPrimaryDisplay()
   const { width, height } = primaryDisplay.workAreaSize
-  const windowWidth = 400
-  const windowHeight = 600
+  const windowWidth = 470
+  const windowHeight = 700
   
   mainWindow = new BrowserWindow({
     width: windowWidth,
