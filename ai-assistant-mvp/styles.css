@@ -16,7 +16,7 @@ body {
 .chat-container {
   position: relative;
   width: 350px;
-  height: calc(100vh + 140px);
+  height: calc(100vh + 160px);
   /* 增加窗口高度 */
   background-color: transparent;
   -webkit-app-region: drag;
@@ -254,10 +254,12 @@ body {
 /* 角色容器样式 */
 #character-container {
   position: absolute;
-  bottom: 100px;
+  bottom: 10%;
   left: 0;
   right: 0;
-  height: 200px;
   z-index: 5;
+  /* 设置为向下对齐 */
+  display: flex;
+  justify-content: center;
   pointer-events: none;
 }
