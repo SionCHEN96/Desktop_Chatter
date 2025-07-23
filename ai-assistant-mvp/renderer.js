@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
       word-wrap: break-word;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       font-size: 14px;
-      transform: translateY(-100%);
       transition: opacity 0.3s;
     }
     .message.ai.fade-out {
@@ -73,32 +72,25 @@ document.addEventListener('DOMContentLoaded', () => {
     messageElement.textContent = text;
     characterContainer.appendChild(messageElement);
 
-    // 计算球体在屏幕上的位置
+    // 固定气泡在character上方
     function updateBubblePosition() {
-      // 获取立方体顶部位置（Y轴减少立方体半径）
-      const cubePosition = new THREE.Vector3(0, 0.3, 0); // 减少Y轴偏移量
-      cubePosition.applyMatrix4(cube.matrixWorld);
-      cubePosition.project(camera);
+      // 固定位置，不再随立方体旋转而变化
+      const containerRect = characterContainer.getBoundingClientRect();
+      const centerX = containerRect.width / 2;
 
-      // 转换为CSS坐标（调整Y轴系数）
-      const x = (cubePosition.x * 0.5 + 0.5) * characterContainer.clientWidth;
-      const y = (0.9 - (cubePosition.y * 0.45)) * characterContainer.clientHeight; // 调整系数
+      // 固定在character容器的上部位置
+      const fixedY = 0; // 固定在character容器顶部位置
 
-      // 定位气泡（简化计算）
+      // 定位气泡
       messageElement.style.position = 'absolute';
-      messageElement.style.left = `${x - messageElement.offsetWidth / 2}px`;
-      messageElement.style.top = `${y}px`;
+      messageElement.style.left = `${centerX - messageElement.offsetWidth / 2}px`;
+      messageElement.style.top = `${fixedY}px`;
     }
 
     // 初始定位
     updateBubblePosition();
 
-    // 动画时持续更新位置
-    function animateWithBubble() {
-      requestAnimationFrame(animateWithBubble);
-      updateBubblePosition();
-    }
-    animateWithBubble();
+    // 不再需要动画更新气泡位置，因为位置已固定
 
     // 设置消息10秒后自动消失
     setTimeout(() => {
