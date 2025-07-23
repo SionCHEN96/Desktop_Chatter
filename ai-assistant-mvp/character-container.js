@@ -63,7 +63,6 @@ function initCharacter3D(width, height) {
   const loader = new GLTFLoader();
   if (loader.register) {
     loader.register((parser) => new VRMLoaderPlugin(parser));
-    // console.log('VRM 动画列表:', vrm.meta?.motion); // 检查是否有动画数据
   } else if (loader.pluginCallbacks) {
     loader.pluginCallbacks.push((parser) => new VRMLoaderPlugin(parser));
   } else if (loader.plugins) {
