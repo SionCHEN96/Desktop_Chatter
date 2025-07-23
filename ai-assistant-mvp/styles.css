@@ -16,25 +16,32 @@ body {
 .chat-container {
   position: relative;
   width: 350px;
-  height: calc(100vh + 140px); /* 增加窗口高度 */
+  height: calc(100vh + 140px);
+  /* 增加窗口高度 */
   background-color: transparent;
   -webkit-app-region: drag;
   padding: 0;
 }
 
 .chat-messages {
-  max-height: 80vh; /* 使用视窗高度百分比 */
-  overflow-y: auto; /* 允许垂直滚动 */
+  max-height: 80vh;
+  /* 使用视窗高度百分比 */
+  overflow-y: auto;
+  /* 允许垂直滚动 */
   word-wrap: break-word;
   position: absolute;
-  top: -100px; /* 上移到 cube 上方 */
+  top: -100px;
+  /* 上移到 cube 上方 */
   left: 0;
   right: 0;
-  bottom: 60px; /* 为输入框留出空间 */
+  bottom: 60px;
+  /* 为输入框留出空间 */
   padding: 10px;
-  width: 100%; /* 宽度与窗口同宽 */
+  width: 100%;
+  /* 宽度与窗口同宽 */
   -webkit-app-region: no-drag;
-  z-index: 10; /* 确保气泡框位于 cube 上方 */
+  z-index: 10;
+  /* 确保气泡框位于 cube 上方 */
 }
 
 /* 隐藏所有可能的滚动条 */
@@ -71,7 +78,7 @@ body {
   position: absolute;
   background-color: rgba(255, 255, 255, 0.95);
   color: black;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border-radius: 18px;
   padding: 12px 15px;
   max-width: 85%;
@@ -82,7 +89,8 @@ body {
 
 .chat-form {
   position: absolute;
-  bottom: 30px; /* 再上移10px (总共上移30px) */
+  bottom: 30px;
+  /* 再上移10px (总共上移30px) */
   left: 0;
   right: 0;
   display: flex;
@@ -95,7 +103,8 @@ body {
 .chat-form::after {
   content: "";
   position: absolute;
-  bottom: -20px; /* 再下移5px确保完全显示 */
+  bottom: -20px;
+  /* 再下移5px确保完全显示 */
   left: 50%;
   transform: translateX(-50%);
   width: 30px;
@@ -145,28 +154,21 @@ body {
 }
 
 
-  right: 0;
-  height: 40px; /* 高度减小到40px */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  -webkit-app-region: no-drag;
-  z-index: 2; /* 确保在气泡上方 */
-}
-
 /* 消息容器 */
 .chat-messages {
   max-height: 500px;
   overflow-y: auto;
   word-wrap: break-word;
   position: absolute;
-  bottom: 150px; /* 立方体下方10px (100px位置 + 40px高度 + 10px间距) */
+  bottom: 150px;
+  /* 立方体下方10px (100px位置 + 40px高度 + 10px间距) */
   left: 0;
   right: 0;
   height: auto;
   overflow: visible !important;
   -webkit-app-region: no-drag;
-  z-index: 1; /* 确保在立方体下方 */
+  z-index: 1;
+  /* 确保在立方体下方 */
   display: flex;
   justify-content: center;
 }
@@ -176,21 +178,26 @@ body {
   display: block;
   background-color: rgba(255, 255, 255, 0.95);
   color: black;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border-radius: 18px;
   padding: 12px 15px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   word-wrap: break-word;
-  text-align: left; /* 文字左对齐 */
-  margin: 0 20px; /* 两侧留白 */
-  animation: popIn 0.5s ease-out forwards; /* 添加出现动画 */
-  transform-origin: center bottom; /* 从底部中心放大 */
+  text-align: left;
+  /* 文字左对齐 */
+  margin: 0 20px;
+  /* 两侧留白 */
+  animation: popIn 0.5s ease-out forwards;
+  /* 添加出现动画 */
+  transform-origin: center bottom;
+  /* 从底部中心放大 */
 }
 
 .message.ai.fade-out {
-  animation: fadeOut 0.6s ease-in forwards; /* 添加消失动画 */
+  animation: fadeOut 0.6s ease-in forwards;
+  /* 添加消失动画 */
 }
 
 /* 消息动画效果 */
@@ -199,9 +206,11 @@ body {
     transform: scale(0.5);
     opacity: 0;
   }
+
   70% {
     transform: scale(1.05);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -213,6 +222,7 @@ body {
     transform: scale(1);
     opacity: 1;
   }
+
   100% {
     transform: scale(0.8);
     opacity: 0;

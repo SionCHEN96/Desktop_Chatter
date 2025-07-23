@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron')
 const path = require('path')
 const axios = require('axios')
+const remoteMain = require('@electron/remote/main')
 
 // 解决WebGL问题的命令行参数
 app.commandLine.appendSwitch('ignore-gpu-blacklist')
@@ -101,15 +102,22 @@ function createWindow() {
     skipTaskbar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: false,
+      nodeIntegration: true,
       contextIsolation: true,
       webgl: true,
-      enablePreferredSizeMode: true
+      enablePreferredSizeMode: true,
+      webSecurity: false
     }
   })
 
   // 加载应用界面
+  // 在创建窗口后，确保加载文件前等待一小段时间
   mainWindow.loadFile('index.html')
+  
+  // 添加错误处理
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('页面加载失败:', errorCode, errorDescription)
+  })
 
   // 开发工具
   if (process.env.NODE_ENV === 'development') {
@@ -119,7 +127,13 @@ function createWindow() {
 
 // Electron初始化完成后调用
 app.whenReady().then(() => {
+  // 确保在创建窗口前初始化remote模块
+  remoteMain.initialize()
   createWindow()
+  // 确保在窗口创建后启用remote
+  if (mainWindow && mainWindow.webContents) {
+    remoteMain.enable(mainWindow.webContents)
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

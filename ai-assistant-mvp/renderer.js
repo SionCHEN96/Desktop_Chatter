@@ -1,5 +1,5 @@
-import * as THREE from '../node_modules/three/build/three.module.js';
-import { initCharacterContainer, characterContainer, scene, camera, cube } from './character-container.js';
+import * as THREE from 'three';
+import { initCharacterContainer, characterContainer, scene, camera } from './character-container.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化3D角色
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 确保3D对象已初始化
-    if (!cube || !camera || !characterContainer) {
+    if (!camera || !characterContainer) {
       console.error('3D对象未初始化');
       return;
     }
