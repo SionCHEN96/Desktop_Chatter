@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Assistant MVP</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
   <div class="chat-container">
     <div class="drag-handle">
     </div>
-    <div id="chat-messages" class="chat-messages"></div>
     <div id="character-container"></div>
+    <div id="chat-messages" class="chat-messages"></div>
     <form id="chat-form" class="chat-form">
       <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
       <button type="submit">Send</button>
@@ -21,5 +19,4 @@
   </div>
   <script type="module" src="renderer.js"></script>
 </body>
-
 </html>
