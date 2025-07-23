@@ -63,6 +63,7 @@ function initCharacter3D(width, height) {
   const loader = new GLTFLoader();
   if (loader.register) {
     loader.register((parser) => new VRMLoaderPlugin(parser));
+    // console.log('VRM 动画列表:', vrm.meta?.motion); // 检查是否有动画数据
   } else if (loader.pluginCallbacks) {
     loader.pluginCallbacks.push((parser) => new VRMLoaderPlugin(parser));
   } else if (loader.plugins) {
@@ -77,7 +78,7 @@ function initCharacter3D(width, height) {
         console.error('未能在 gltf.userData.vrm 中找到 VRM 模型');
         return;
       }
-      vrm.scene.scale.set(1, 1, 1); // 还原缩放
+      vrm.scene.scale.set(2, 2, 2); // 角色模型为原始大小的2倍
       vrm.scene.position.set(0, 0, 0); // 还原位置
       vrm.scene.rotation.y = Math.PI; // 让模型正对摄像机
       scene.add(vrm.scene);
@@ -129,6 +130,14 @@ function animate() {
     if (vrm.expressionManager) {
       // 让“joy”表情在0.3~0.7之间波动
       vrm.expressionManager.setValue('joy', 0.5 + 0.2 * Math.sin(elapsedTime * 2));
+    }
+
+    // 播放 idle 动画
+    if (vrm.meta && vrm.meta.motion) {
+      const idleAnimation = vrm.meta.motion.idle;
+      if (idleAnimation) {
+        vrm.playAnimation(idleAnimation);
+      }
     }
 
     if (vrm.update) {
