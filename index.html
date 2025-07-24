@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Companion</title>
+    <link rel="stylesheet" href="src/styles/styles.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./node_modules/three/build/three.module.js",
+                "three/examples/jsm/loaders/GLTFLoader.js": "./node_modules/three/examples/jsm/loaders/GLTFLoader.js",
+                "@pixiv/three-vrm": "./node_modules/@pixiv/three-vrm/lib/three-vrm.module.js",
+                "@pixiv/three-vrm-core": "./node_modules/@pixiv/three-vrm-core/lib/three-vrm-core.module.js"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="drag-handle"></div>
+        <div id="character-container"></div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <form id="chat-form" class="chat-form">
+            <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <script type="module" src="src/renderer/renderer.js"></script>
+</body>
+</html>
