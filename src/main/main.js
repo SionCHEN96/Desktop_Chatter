@@ -80,7 +80,7 @@ function createWindow () {
     }
   });
 
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile(join(__dirname, '../../index.html'));
 
   // 初始化@electron/remote模块
   remoteMain.enable(mainWindow.webContents);

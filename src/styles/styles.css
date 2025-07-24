@@ -62,17 +62,21 @@
 
 /* AI回复气泡框样式 */
 .chat-messages {
-    position: fixed;
-    /* 使用fixed定位以确保始终在屏幕顶部 */
-    top: 120px;
-    /* 距离顶部120px，使气泡框位于模型头部微微往上 */
-    left: 0;
-    right: 0;
+    position: absolute;
+    /* 使用absolute定位以便于相对于父元素定位 */
+    /* 相对于底部 */
+    bottom: 50%;
     padding: 10px;
+    left: 0%;
+    right: 0%;
     z-index: 30;
     /* 确保AI回复气泡框显示在最上层 */
     background-color: transparent;
     /* 回复气泡框背景透明 */
+    max-width: 80%;
+    /* 设置最大宽度 */
+    overflow-y: auto;
+    /* 当内容超出时显示滚动条 */
 }
 
 /* 添加浮动动画关键帧 */
@@ -93,6 +97,15 @@
 /* 为AI消息气泡添加浮动效果 */
 .ai-message {
     animation: float 3s ease-in-out infinite;
+    background-color: rgba(241, 241, 241, 0.8);
+    /* 80%半透明 */
+    color: black;
+    margin-right: auto;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 20px;
+    max-width: 80%;
+    word-wrap: break-word;
 }
 
 /* 基础样式重置 */
@@ -212,5 +225,10 @@ body {
 @media (max-width: 400px) {
     .chat-container {
         width: 100vw;
+    }
+
+    .chat-messages {
+        max-width: 90%;
+        /* 在小屏幕上调整最大宽度 */
     }
 }
