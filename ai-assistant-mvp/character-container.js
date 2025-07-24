@@ -69,6 +69,7 @@ function initCharacter3D(width, height) {
     loader.plugins.push(new VRMLoaderPlugin(loader.parser));
   }
 
+  // 加载模型时调整模型位置
   loader.load(
     'Lina_VRM.vrm',
     (gltf) => {
@@ -77,8 +78,8 @@ function initCharacter3D(width, height) {
         console.error('未能在 gltf.userData.vrm 中找到 VRM 模型');
         return;
       }
-      vrm.scene.scale.set(1, 1, 1); // 还原缩放
-      vrm.scene.position.set(0, 0, 0); // 还原位置
+      vrm.scene.scale.set(3.0, 3.0, 3.0); // Increase scale from 1.5 to 3.0 to make model twice as large
+      vrm.scene.position.set(0, -2, 0); // 下移模型位置
       vrm.scene.rotation.y = Math.PI; // 让模型正对摄像机
       scene.add(vrm.scene);
       console.log('VRM 加载完成', vrm);
@@ -99,8 +100,8 @@ function initCharacter3D(width, height) {
   );
 
   // 调整相机位置
-  camera.position.set(0, 1, 2.5); // 更高更远
-  camera.lookAt(0, 1, 0); // 看向模型中心
+  camera.position.set(0, 3, 6); // 调整相机位置，使其更远更高，确保模型完全显示
+  camera.lookAt(0, 0, 0); // 看向模型中心
 
   // 输出场景内容
   console.log('scene children:', scene.children);
@@ -127,7 +128,7 @@ function animate() {
     }
 
     if (vrm.expressionManager) {
-      // 让“joy”表情在0.3~0.7之间波动
+      // 让"joy"表情在0.3~0.7之间波动
       vrm.expressionManager.setValue('joy', 0.5 + 0.2 * Math.sin(elapsedTime * 2));
     }
 
