@@ -18,6 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
+  // 添加消息气泡浮动动画样式
+  const floatAnimationStyle = document.createElement('style');
+  floatAnimationStyle.textContent = `
+    @keyframes float {
+      0% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+      100% {
+        transform: translateY(0px);
+      }
+    }
+  `;
+  document.head.appendChild(floatAnimationStyle);
+
   // 处理消息发送
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault()
@@ -68,6 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender}`;
     messageElement.textContent = text;
+    
+    // 添加浮动动画样式
+    messageElement.style.animation = 'float 1.5s ease-in-out infinite';
+    messageElement.style.position = 'absolute';
+    messageElement.style.zIndex = '10';
+    messageElement.style.pointerEvents = 'none';
+    
     characterContainer.appendChild(messageElement);
 
     // 固定气泡在character上方
@@ -80,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const fixedY = -20; // 负值表示向上移动
       
       // 定位气泡
-      messageElement.style.position = 'absolute';
       messageElement.style.left = `${centerX - messageElement.offsetWidth / 2}px`;
       messageElement.style.bottom = `${containerRect.height - fixedY}px`; // 固定底部位置
       messageElement.style.top = 'auto'; // 取消top定位，使用bottom定位
