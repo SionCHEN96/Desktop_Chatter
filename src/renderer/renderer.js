@@ -69,10 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 不再显示用户消息气泡框
       window.electronAPI.sendMessage(message)
       messageInput.value = ''
-      
-      // 播放简单动画
-      playSimpleAnimation();
-      
+
       // 播放思考动画
       console.log('准备播放思考动画');
       playAnimation('thinking');
@@ -83,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 显示AI消息的函数
   function showAIMessage(text) {
     console.log('准备显示AI消息并切换到idle动画');
-    
+
     // 清空之前的消息
     chatMessages.innerHTML = '';
 
@@ -95,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 自动滚动到底部
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     // 当AI回复出现时，取消thinking动画并恢复idle动画
     console.log('准备播放idle动画');
     playAnimation('idle');
@@ -105,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 接收AI响应
   window.electronAPI.onResponse((event, response) => {
     showAIMessage(response)
-    
+
     // 根据响应内容播放不同情绪的动画
     // 这里只是一个示例，实际应用中可以根据响应内容进行判断
     /*
