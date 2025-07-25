@@ -17,49 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  // 添加消息气泡动画样式
-  const bubbleAnimationStyle = document.createElement('style');
-  bubbleAnimationStyle.textContent = `
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes fadeOut {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(20px); }
-    }
-    
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-      100% { transform: translateY(0px); }
-    }
-    
-    .message {
-      padding: 15px 20px;
-      margin: 10px 0;
-      border-radius: 20px;
-      max-width: 80%;
-      word-wrap: break-word;
-      animation: fadeIn 0.3s ease-out;
-      line-height: 1.4;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .message.fade-out {
-      animation: fadeOut 0.3s ease-out forwards;
-    }
-    
-    .ai-message {
-      background-color: rgba(241, 241, 241, 0.8); /* 80%半透明 */
-      color: black;
-      margin-right: auto;
-      animation: float 3s ease-in-out infinite;
-    }
-  `;
-  document.head.appendChild(bubbleAnimationStyle);
 
   // 处理消息发送
   chatForm.addEventListener('submit', (e) => {

@@ -50,26 +50,33 @@
     padding: 10px 20px;
     border: none;
     border-radius: 20px;
-    background: linear-gradient(135deg, #cccccc, #999999); /* 灰色渐变背景 */
+    background: linear-gradient(135deg, #cccccc, #999999);
+    /* 灰色渐变背景 */
     color: white;
     cursor: pointer;
     -webkit-app-region: no-drag;
     font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
-    transition: all 0.3s ease; /* 添加过渡动画 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* 添加阴影效果 */
+    transition: all 0.3s ease;
+    /* 添加过渡动画 */
     position: relative;
     overflow: hidden;
 }
 
 .chat-form button:hover {
-    background: linear-gradient(135deg, #999999, #666666); /* 悬停时的渐变背景 */
-    transform: translateY(-2px); /* 悬停时轻微上移 */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* 悬停时增强阴影 */
+    background: linear-gradient(135deg, #999999, #666666);
+    /* 悬停时的渐变背景 */
+    transform: translateY(-2px);
+    /* 悬停时轻微上移 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    /* 悬停时增强阴影 */
 }
 
 /* 为按钮添加可爱的元素 */
 .chat-form button::before {
-    content: "✉️"; /* 添加邮件表情符号 */
+    content: "✉️";
+    /* 添加邮件表情符号 */
     margin-right: 5px;
 }
 
@@ -93,20 +100,18 @@
 .chat-messages {
     position: absolute;
     /* 使用absolute定位以便于相对于父元素定位 */
-    /* 相对于底部 */
-    bottom: 50%;
+    top: 50px;
+    /* 调整位置，使其在角色模型头部上方 */
+    left: 0;
+    right: 0;
     padding: 10px;
-    left: 0%;
-    right: 0%;
     z-index: 30;
     /* 确保AI回复气泡框显示在最上层 */
     background-color: transparent;
     /* 回复气泡框背景透明 */
-    max-width: 80%;
-    /* 设置最大宽度 */
     overflow-y: auto;
     /* 当内容超出时显示滚动条 */
-    max-height: 40%; /* 增加最大高度，确保长消息能完整显示 */
+    max-height: 40%;
 }
 
 /* 添加浮动动画关键帧 */
@@ -125,86 +130,35 @@
 }
 
 /* 为AI消息气泡添加浮动效果 */
-.ai-message {
+.message {
     animation: float 3s ease-in-out infinite;
     background-color: rgba(241, 241, 241, 0.8);
     /* 80%半透明 */
     color: black;
-    margin-right: auto;
-    padding: 15px 20px; /* 增加内边距，让文字显示更舒适 */
+    padding: 15px 20px;
+    /* 增加内边距，让文字显示更舒适 */
     margin: 10px 0;
     border-radius: 20px;
-    max-width: 80%;
+    width: 100%; /* 设置宽度为100% */
     word-wrap: break-word;
-    line-height: 1.4; /* 增加行高，提高可读性 */
-}
-
-/* 基础样式重置 */
-* {
+    line-height: 1.4;
+    /* 增加行高，提高可读性 */
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-body {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: transparent;
-}
-
-.chat-container {
-    position: relative;
-    width: 350px;
-    height: calc(100vh + 200px); /* 增加窗口高度 */
-    background-color: transparent;
-    -webkit-app-region: drag;
-    padding: 0;
-}
-
-/* AI回复气泡框样式 */
-.chat-messages {
-    position: absolute;
-    bottom: 50%;
-    padding: 10px;
-    left: 0%;
-    right: 0%;
-    z-index: 30;
-    background-color: transparent;
-    max-width: 80%;
-    overflow-y: auto;
-    max-height: 60%; /* 进一步增加最大高度 */
-}
-
-/* 添加浮动动画关键帧 */
-@keyframes float {
-    0% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-
-    100% {
-        transform: translateY(0px);
-    }
-}
-
-/* 为AI消息气泡添加浮动效果 */
 .ai-message {
     animation: float 3s ease-in-out infinite;
-    background-color: rgba(241, 241, 241, 0.8);
-    /* 80%半透明 */
-    color: black;
-    margin-right: auto;
-    padding: 15px 20px; /* 增加内边距，让文字显示更舒适 */
-    margin: 10px 0;
-    border-radius: 20px;
-    max-width: 80%;
-    word-wrap: break-word;
-    line-height: 1.4; /* 增加行高，提高可读性 */
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(20px); }
 }
 
 /* 基础样式重置 */
@@ -273,26 +227,33 @@ body {
     padding: 10px 20px;
     border: none;
     border-radius: 20px;
-    background: linear-gradient(135deg, #cccccc, #999999); /* 灰色渐变背景 */
+    background: linear-gradient(135deg, #cccccc, #999999);
+    /* 灰色渐变背景 */
     color: white;
     cursor: pointer;
     -webkit-app-region: no-drag;
     font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
-    transition: all 0.3s ease; /* 添加过渡动画 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* 添加阴影效果 */
+    transition: all 0.3s ease;
+    /* 添加过渡动画 */
     position: relative;
     overflow: hidden;
 }
 
 .chat-form button:hover {
-    background: linear-gradient(135deg, #999999, #666666); /* 悬停时的渐变背景 */
-    transform: translateY(-2px); /* 悬停时轻微上移 */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* 悬停时增强阴影 */
+    background: linear-gradient(135deg, #999999, #666666);
+    /* 悬停时的渐变背景 */
+    transform: translateY(-2px);
+    /* 悬停时轻微上移 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    /* 悬停时增强阴影 */
 }
 
 /* 为按钮添加可爱的元素 */
 .chat-form button::before {
-    content: "✉️"; /* 添加邮件表情符号 */
+    content: "✉️";
+    /* 添加邮件表情符号 */
     margin-right: 5px;
 }
 
