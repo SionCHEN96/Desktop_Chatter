@@ -77,6 +77,7 @@
     /* 设置最大宽度 */
     overflow-y: auto;
     /* 当内容超出时显示滚动条 */
+    max-height: 40%; /* 增加最大高度，确保长消息能完整显示 */
 }
 
 /* 添加浮动动画关键帧 */
@@ -101,11 +102,80 @@
     /* 80%半透明 */
     color: black;
     margin-right: auto;
-    padding: 10px 15px;
+    padding: 15px 20px; /* 增加内边距，让文字显示更舒适 */
     margin: 10px 0;
     border-radius: 20px;
     max-width: 80%;
     word-wrap: break-word;
+    line-height: 1.4; /* 增加行高，提高可读性 */
+}
+
+/* 基础样式重置 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+}
+
+.chat-container {
+    position: relative;
+    width: 350px;
+    height: calc(100vh + 200px); /* 增加窗口高度 */
+    background-color: transparent;
+    -webkit-app-region: drag;
+    padding: 0;
+}
+
+/* AI回复气泡框样式 */
+.chat-messages {
+    position: absolute;
+    bottom: 50%;
+    padding: 10px;
+    left: 0%;
+    right: 0%;
+    z-index: 30;
+    background-color: transparent;
+    max-width: 80%;
+    overflow-y: auto;
+    max-height: 60%; /* 进一步增加最大高度 */
+}
+
+/* 添加浮动动画关键帧 */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* 为AI消息气泡添加浮动效果 */
+.ai-message {
+    animation: float 3s ease-in-out infinite;
+    background-color: rgba(241, 241, 241, 0.8);
+    /* 80%半透明 */
+    color: black;
+    margin-right: auto;
+    padding: 15px 20px; /* 增加内边距，让文字显示更舒适 */
+    margin: 10px 0;
+    border-radius: 20px;
+    max-width: 80%;
+    word-wrap: break-word;
+    line-height: 1.4; /* 增加行高，提高可读性 */
 }
 
 /* 基础样式重置 */
