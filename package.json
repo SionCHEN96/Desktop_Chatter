@@ -14,7 +14,8 @@
     "@pixiv/three-vrm": "^3.4.2",
     "@pixiv/three-vrm-core": "^3.4.2",
     "axios": "^1.6.2",
-    "three": "^0.153.0"
+    "three": "^0.153.0",
+    "three-fbx-loader": "^1.0.3"
   },
   "keywords": [
     "electron",
