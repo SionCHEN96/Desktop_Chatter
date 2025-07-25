@@ -11,7 +11,7 @@ export const ANIMATION_CONFIG = {
   
   // 思考动画
   thinking: {
-    resource: './public/Animations/Thinking.fbx', // 占位符，需要实际资源文件
+    resource: './public/Animations/Thinking.fbx',
     name: 'Thinking',
     description: '思考动画，角色表现出思考的状态'
   },

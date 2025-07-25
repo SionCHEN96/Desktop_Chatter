@@ -73,13 +73,17 @@ document.addEventListener('DOMContentLoaded', () => {
       // 播放简单动画
       playSimpleAnimation();
       
-      // 可以根据需要播放特定动画
-      // playAnimation('thinking');
+      // 播放思考动画
+      console.log('准备播放思考动画');
+      playAnimation('thinking');
+      console.log('已调用播放思考动画');
     }
   })
 
   // 显示AI消息的函数
   function showAIMessage(text) {
+    console.log('准备显示AI消息并切换到idle动画');
+    
     // 清空之前的消息
     chatMessages.innerHTML = '';
 
@@ -91,16 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 自动滚动到底部
     chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    // 10秒后自动隐藏消息
-    setTimeout(() => {
-        messageElement.classList.add('fade-out');
-        setTimeout(() => {
-            if (messageElement.parentNode) {
-                messageElement.parentNode.removeChild(messageElement);
-            }
-        }, 300); // 与fadeOut动画持续时间匹配
-    }, 10000);
+    
+    // 当AI回复出现时，取消thinking动画并恢复idle动画
+    console.log('准备播放idle动画');
+    playAnimation('idle');
+    console.log('已调用播放idle动画');
   }
 
   // 接收AI响应
