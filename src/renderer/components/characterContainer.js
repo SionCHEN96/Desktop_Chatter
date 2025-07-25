@@ -173,6 +173,7 @@ function loadFBXModel() {
     });
 
     // 调整模型位置和缩放，使角色正对观众
+    fbxModel.position.set(0, 0.12, 0);
     fbxModel.rotation.y = 0; // 将旋转从Math.PI改为0，使角色正对观众
     fbxModel.scale.set(0.8, 0.8, 0.8);
     // 启用模型投射和接收阴影
