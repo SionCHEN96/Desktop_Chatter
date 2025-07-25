@@ -18,14 +18,14 @@ export const ANIMATION_CONFIG = {
   
   // 开心动画
   joy: {
-    resource: './public/Animations/Joy.fbx', // 占位符，需要实际资源文件
+    resource: './public/Animations/Standing Idle.fbx', // 使用现有文件作为占位符
     name: 'Joy',
     description: '开心动画，角色表现出高兴的情绪'
   },
   
   // 悲伤动画
   sad: {
-    resource: './public/Animations/Sad.fbx', // 占位符，需要实际资源文件
+    resource: './public/Animations/Standing Idle.fbx', // 使用现有文件作为占位符
     name: 'Sad',
     description: '悲伤动画，角色表现出悲伤的情绪'
   }
