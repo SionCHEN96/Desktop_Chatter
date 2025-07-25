@@ -37,12 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     .message {
-      padding: 10px 15px;
+      padding: 15px 20px;
       margin: 10px 0;
       border-radius: 20px;
       max-width: 80%;
       word-wrap: break-word;
       animation: fadeIn 0.3s ease-out;
+      line-height: 1.4;
+      max-height: 300px;
+      overflow-y: auto;
     }
     
     .message.fade-out {
@@ -79,22 +82,24 @@ document.addEventListener('DOMContentLoaded', () => {
   function showAIMessage(text) {
     // 清空之前的消息
     chatMessages.innerHTML = '';
-    
+
     // 创建新消息元素
-    const messageElement = document.createElement('div')
-    messageElement.classList.add('message', 'ai-message')
-    messageElement.textContent = text
-    chatMessages.appendChild(messageElement)
-    chatMessages.scrollTop = chatMessages.scrollHeight
-    
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', 'ai-message');
+    messageElement.textContent = text;
+    chatMessages.appendChild(messageElement);
+
+    // 自动滚动到底部
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
     // 10秒后自动隐藏消息
     setTimeout(() => {
-      messageElement.classList.add('fade-out');
-      setTimeout(() => {
-        if (messageElement.parentNode) {
-          messageElement.parentNode.removeChild(messageElement);
-        }
-      }, 300); // 与fadeOut动画持续时间匹配
+        messageElement.classList.add('fade-out');
+        setTimeout(() => {
+            if (messageElement.parentNode) {
+                messageElement.parentNode.removeChild(messageElement);
+            }
+        }, 300); // 与fadeOut动画持续时间匹配
     }, 10000);
   }
 
