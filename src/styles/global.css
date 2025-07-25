@@ -1,0 +1,5 @@
+/* 调整气泡框宽度 */
+.ant-message-notice-content {
+    max-width: calc(100% - 40px); /* 根据需要调整具体值 */
+    word-wrap: break-word; /* 确保长文本自动换行 */
+}
