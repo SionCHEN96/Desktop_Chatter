@@ -1,4 +1,4 @@
-import { initCharacterContainer, playSimpleAnimation } from './components/characterContainer.js';
+import { initCharacterContainer, playSimpleAnimation, playAnimation } from './components/characterContainer.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化3D角色
@@ -69,6 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 播放简单动画
       playSimpleAnimation();
+      
+      // 可以根据需要播放特定动画
+      // playAnimation('thinking');
     }
   })
 
@@ -99,7 +102,16 @@ document.addEventListener('DOMContentLoaded', () => {
   window.electronAPI.onResponse((event, response) => {
     showAIMessage(response)
     
-    // 播放简单动画
-    playSimpleAnimation();
+    // 根据响应内容播放不同情绪的动画
+    // 这里只是一个示例，实际应用中可以根据响应内容进行判断
+    /*
+    if (response.includes('高兴') || response.includes('开心')) {
+      playAnimation('joy');
+    } else if (response.includes('悲伤') || response.includes('难过')) {
+      playAnimation('sad');
+    } else {
+      playAnimation('idle');
+    }
+    */
   })
 })
