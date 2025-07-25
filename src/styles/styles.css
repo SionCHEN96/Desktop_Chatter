@@ -50,14 +50,43 @@
     padding: 10px 20px;
     border: none;
     border-radius: 20px;
-    background-color: #007bff;
+    background: linear-gradient(135deg, #cccccc, #999999); /* 灰色渐变背景 */
     color: white;
     cursor: pointer;
     -webkit-app-region: no-drag;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+    transition: all 0.3s ease; /* 添加过渡动画 */
+    position: relative;
+    overflow: hidden;
 }
 
 .chat-form button:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, #999999, #666666); /* 悬停时的渐变背景 */
+    transform: translateY(-2px); /* 悬停时轻微上移 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* 悬停时增强阴影 */
+}
+
+/* 为按钮添加可爱的元素 */
+.chat-form button::before {
+    content: "✉️"; /* 添加邮件表情符号 */
+    margin-right: 5px;
+}
+
+.chat-form button::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20px;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(25deg);
+    transition: all 0.4s;
+}
+
+.chat-form button:hover::after {
+    left: 120%;
 }
 
 /* AI回复气泡框样式 */
@@ -244,14 +273,43 @@ body {
     padding: 10px 20px;
     border: none;
     border-radius: 20px;
-    background-color: #007bff;
+    background: linear-gradient(135deg, #cccccc, #999999); /* 灰色渐变背景 */
     color: white;
     cursor: pointer;
     -webkit-app-region: no-drag;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+    transition: all 0.3s ease; /* 添加过渡动画 */
+    position: relative;
+    overflow: hidden;
 }
 
 .chat-form button:hover {
-    background-color: #0056b3;
+    background: linear-gradient(135deg, #999999, #666666); /* 悬停时的渐变背景 */
+    transform: translateY(-2px); /* 悬停时轻微上移 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* 悬停时增强阴影 */
+}
+
+/* 为按钮添加可爱的元素 */
+.chat-form button::before {
+    content: "✉️"; /* 添加邮件表情符号 */
+    margin-right: 5px;
+}
+
+.chat-form button::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20px;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(25deg);
+    transition: all 0.4s;
+}
+
+.chat-form button:hover::after {
+    left: 120%;
 }
 
 /* 拖拽区域样式 */
