@@ -10,6 +10,8 @@ let scene, camera, renderer;
 let fbxModel; // FBX模型
 let mixer; // Animation mixer for the FBX animation
 const clock = new THREE.Clock();
+let currentAction = null; // 当前播放的动画动作
+const loadedActions = new Map(); // 存储已加载的动画动作
 
 // 初始化容器
 export function initCharacterContainer() {
@@ -185,6 +187,19 @@ function loadFBXModel() {
     // 创建动画混合器
     mixer = new THREE.AnimationMixer(fbxModel);
     
+    // 应用一个自然的初始姿势，避免T-pose
+    // 遍历模型骨骼并应用自然姿势
+    fbxModel.traverse((child) => {
+      if (child.isBone) {
+        // 应用自然的初始姿势，让手臂轻微下垂
+        if (child.name.includes('Arm')) {
+          child.rotation.x = -0.2; // 轻微向下
+        } else if (child.name.includes('ForeArm')) {
+          child.rotation.x = -0.3; // 轻微弯曲
+        }
+      }
+    });
+    
     // 加载并播放idle动画
     loadFBXAnimation();
     
@@ -206,9 +221,13 @@ function loadFBXAnimation() {
     if (object.animations && object.animations.length > 0) {
       console.log('找到动画剪辑:', object.animations.length, '个');
       
-      // 播放第一个动画（假设为idle动画）
+      // 创建并存储idle动画动作
       const action = mixer.clipAction(object.animations[0]);
+      loadedActions.set('idle', action); // 使用键名而不是动画名称
+      
+      // 播放idle动画
       action.play();
+      currentAction = action;
       
       console.log('开始播放', idleAnimation.name, '动画');
     } else {
@@ -217,22 +236,91 @@ function loadFBXAnimation() {
   }, undefined, (error) => {
     console.error('加载FBX动画时出错:', error);
   });
+  
+  // 预加载thinking动画
+  const thinkingAnimation = ANIMATION_CONFIG.thinking;
+  loader.load(thinkingAnimation.resource, (object) => {
+    if (object.animations && object.animations.length > 0) {
+      console.log('预加载思考动画剪辑');
+      
+      // 创建并存储thinking动画动作
+      const action = mixer.clipAction(object.animations[0]);
+      loadedActions.set('thinking', action); // 使用键名而不是动画名称
+      
+      console.log('预加载', thinkingAnimation.name, '动画完成');
+    }
+  }, undefined, (error) => {
+    console.error('预加载思考动画时出错:', error);
+  });
+  
+  // 输出预加载完成后的动画列表
+  setTimeout(() => {
+    console.log('预加载完成，当前可用动画:', Array.from(loadedActions.keys()));
+  }, 1000);
 }
 
 // 添加播放指定动画的函数
 export function playAnimation(animationName) {
+  console.log('尝试播放动画:', animationName);
+  
   // 检查动画配置中是否存在该动画
   if (!ANIMATION_CONFIG[animationName]) {
     console.warn('未找到动画配置:', animationName);
     return;
   }
   
-  const animation = ANIMATION_CONFIG[animationName];
+  console.log('预加载动画列表:', Array.from(loadedActions.keys()));
   
-  // 停止当前所有动画
-  if (mixer) {
-    mixer.stopAllAction();
+  // 首先检查动画是否已预加载
+  if (loadedActions.has(animationName)) {
+    console.log('使用预加载的动画:', animationName);
+    const action = loadedActions.get(animationName);
+    
+    // 查找当前正在播放的动作
+    let currentlyPlayingAction = null;
+    if (mixer) {
+      for (let i = 0; i < mixer._actions.length; i++) {
+        if (mixer._actions[i].isRunning()) {
+          currentlyPlayingAction = mixer._actions[i];
+          break;
+        }
+      }
+    }
+    
+    console.log('当前播放的动作:', currentlyPlayingAction);
+    
+    // 如果有正在播放的动作，则进行交叉淡入淡出
+    if (currentlyPlayingAction && currentlyPlayingAction !== action) {
+      console.log('执行交叉淡入淡出');
+      // 交叉淡入淡出，持续时间0.3秒
+      currentlyPlayingAction.crossFadeTo(action, 0.3, false);
+      // 确保新动作被播放
+      action.play();
+      // 确保动作启用
+      action.enabled = true;
+    } else if (!currentlyPlayingAction) {
+      console.log('直接播放动画');
+      // 如果没有正在播放的动作，直接播放新动作
+      action.play();
+      // 确保动作启用
+      action.enabled = true;
+    } else if (currentlyPlayingAction === action) {
+      console.log('请求的动画已在播放中');
+      // 如果请求的动画已经在播放，则重置并重新播放
+      action.reset().play();
+      // 确保动作启用
+      action.enabled = true;
+    }
+    
+    // 更新当前动作引用
+    currentAction = action;
+    return;
   }
+  
+  console.log('动画未预加载，动态加载:', animationName);
+  
+  // 如果动画未预加载，则动态加载
+  const animation = ANIMATION_CONFIG[animationName];
   
   // 加载并播放指定动画
   const loader = new FBXLoader();
@@ -240,9 +328,50 @@ export function playAnimation(animationName) {
     if (object.animations && object.animations.length > 0) {
       console.log('加载动画:', animation.name);
       
-      // 播放动画
+      // 播放新动画并实现淡入淡出效果
       const action = mixer.clipAction(object.animations[0]);
-      action.play();
+      
+      // 如果mixer已存在，则进行动画过渡
+      if (mixer) {
+        // 查找当前正在播放的动作
+        let currentlyPlayingAction = null;
+        for (let i = 0; i < mixer._actions.length; i++) {
+          if (mixer._actions[i].isRunning()) {
+            currentlyPlayingAction = mixer._actions[i];
+            break;
+          }
+        }
+        
+        // 如果有正在播放的动作，则进行交叉淡入淡出
+        if (currentlyPlayingAction) {
+          console.log('执行交叉淡入淡出（动态加载）');
+          // 交叉淡入淡出，持续时间0.3秒
+          currentlyPlayingAction.crossFadeTo(action, 0.3, false);
+          // 确保新动作被播放
+          action.play();
+          // 确保动作启用
+          action.enabled = true;
+        } else {
+          console.log('直接播放动画（动态加载）');
+          // 如果没有正在播放的动作，直接播放新动作
+          action.play();
+          // 确保动作启用
+          action.enabled = true;
+        }
+      } else {
+        console.log('直接播放动画（无mixer）');
+        // 如果mixer不存在，直接播放新动作
+        action.play();
+        // 确保动作启用
+        action.enabled = true;
+      }
+      
+      // 设置动画循环
+      action.loop = THREE.LoopRepeat;
+      action.clampWhenFinished = true;
+      
+      // 存储动作以便后续快速访问
+      loadedActions.set(animationName, action);
       
       console.log('开始播放', animation.name, '动画');
     } else {
