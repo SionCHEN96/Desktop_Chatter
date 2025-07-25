@@ -292,24 +292,39 @@ export function playAnimation(animationName) {
     // 如果有正在播放的动作，则进行交叉淡入淡出
     if (currentlyPlayingAction && currentlyPlayingAction !== action) {
       console.log('执行交叉淡入淡出');
-      // 交叉淡入淡出，持续时间0.3秒
-      currentlyPlayingAction.crossFadeTo(action, 0.3, false);
+      // 根据不同的动画组合设置不同的过渡时间，使过渡更加自然
+      let fadeDuration = 0.3; // 默认过渡时间
+      
+      // 特殊处理：从thinking到idle的过渡可以稍微长一点，让用户更清楚地看到状态变化
+      if (currentlyPlayingAction.getClip().name.includes('Thinking') || 
+          (currentlyPlayingAction === loadedActions.get('thinking') && animationName === 'idle')) {
+        fadeDuration = 0.5; // 从思考到待机使用更长的过渡时间
+      }
+      
+      // 交叉淡入淡出
+      currentlyPlayingAction.crossFadeTo(action, fadeDuration, false);
       // 确保新动作被播放
       action.play();
       // 确保动作启用
       action.enabled = true;
+      // 设置动作为循环播放
+      action.setLoop(THREE.LoopRepeat, Infinity);
     } else if (!currentlyPlayingAction) {
       console.log('直接播放动画');
       // 如果没有正在播放的动作，直接播放新动作
       action.play();
       // 确保动作启用
       action.enabled = true;
+      // 设置动作为循环播放
+      action.setLoop(THREE.LoopRepeat, Infinity);
     } else if (currentlyPlayingAction === action) {
       console.log('请求的动画已在播放中');
       // 如果请求的动画已经在播放，则重置并重新播放
       action.reset().play();
       // 确保动作启用
       action.enabled = true;
+      // 设置动作为循环播放
+      action.setLoop(THREE.LoopRepeat, Infinity);
     }
     
     // 更新当前动作引用
@@ -345,18 +360,31 @@ export function playAnimation(animationName) {
         // 如果有正在播放的动作，则进行交叉淡入淡出
         if (currentlyPlayingAction) {
           console.log('执行交叉淡入淡出（动态加载）');
-          // 交叉淡入淡出，持续时间0.3秒
-          currentlyPlayingAction.crossFadeTo(action, 0.3, false);
+          // 根据不同的动画组合设置不同的过渡时间，使过渡更加自然
+          let fadeDuration = 0.3; // 默认过渡时间
+          
+          // 特殊处理：从thinking到idle的过渡可以稍微长一点，让用户更清楚地看到状态变化
+          if (currentlyPlayingAction.getClip().name.includes('Thinking') || 
+              (currentlyPlayingAction === loadedActions.get('thinking') && animationName === 'idle')) {
+            fadeDuration = 0.5; // 从思考到待机使用更长的过渡时间
+          }
+          
+          // 交叉淡入淡出
+          currentlyPlayingAction.crossFadeTo(action, fadeDuration, false);
           // 确保新动作被播放
           action.play();
           // 确保动作启用
           action.enabled = true;
+          // 设置动作为循环播放
+          action.setLoop(THREE.LoopRepeat, Infinity);
         } else {
           console.log('直接播放动画（动态加载）');
           // 如果没有正在播放的动作，直接播放新动作
           action.play();
           // 确保动作启用
           action.enabled = true;
+          // 设置动作为循环播放
+          action.setLoop(THREE.LoopRepeat, Infinity);
         }
       } else {
         console.log('直接播放动画（无mixer）');
@@ -364,6 +392,8 @@ export function playAnimation(animationName) {
         action.play();
         // 确保动作启用
         action.enabled = true;
+        // 设置动作为循环播放
+        action.setLoop(THREE.LoopRepeat, Infinity);
       }
       
       // 设置动画循环
