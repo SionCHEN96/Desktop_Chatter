@@ -1,3 +1,0 @@
-@echo off
-echo 正在启动 AI 助手与 Qdrant 数据库...
-npm run start-with-db
