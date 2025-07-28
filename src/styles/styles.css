@@ -10,190 +10,22 @@
     width: 100%;
     height: 100%;
     /* 设置模型容器高度为100% */
-    z-index: 5;
+    z-index: 20;
+    /* 确保模型显示在中间层 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
     pointer-events: none;
     border: none;
 }
 
+/* 角色容器内的canvas样式 */
+#character-container canvas {
+    width: 100%;
+    height: 100%;
+}
+
 /* 调整用户输入框和Send按钮的位置 */
-.chat-form {
-    position: fixed;
-    /* 使用fixed定位以确保始终在屏幕底部 */
-    bottom: 10px;
-    left: 0;
-    right: 0;
-    display: flex;
-    padding: 0 10px;
-    -webkit-app-region: no-drag;
-    z-index: 10;
-    /* 确保输入框位于最下层 */
-    background-color: transparent;
-    /* 输入框背景透明 */
-}
-
-#message-input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    /* 输入框背景半透明 */
-}
-
-#message-input:focus {
-    border-color: #007bff;
-}
-
-.chat-form button {
-    margin-left: 10px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #cccccc, #999999);
-    /* 灰色渐变背景 */
-    color: white;
-    cursor: pointer;
-    -webkit-app-region: no-drag;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    /* 添加阴影效果 */
-    transition: all 0.3s ease;
-    /* 添加过渡动画 */
-    position: relative;
-    overflow: hidden;
-}
-
-.chat-form button:hover {
-    background: linear-gradient(135deg, #999999, #666666);
-    /* 悬停时的渐变背景 */
-    transform: translateY(-2px);
-    /* 悬停时轻微上移 */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    /* 悬停时增强阴影 */
-}
-
-/* 为按钮添加可爱的元素 */
-.chat-form button::before {
-    content: "✉️";
-    /* 添加邮件表情符号 */
-    margin-right: 5px;
-}
-
-.chat-form button::after {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -60%;
-    width: 20px;
-    height: 200%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: rotate(25deg);
-    transition: all 0.4s;
-}
-
-.chat-form button:hover::after {
-    left: 120%;
-}
-
-/* AI回复气泡框样式 */
-.chat-messages {
-    position: absolute;
-    /* 使用absolute定位以便于相对于父元素定位 */
-    top: 50px;
-    /* 调整位置，使其在角色模型头部上方 */
-    left: 0;
-    right: 0;
-    padding: 10px;
-    z-index: 30;
-    /* 确保AI回复气泡框显示在最上层 */
-    background-color: transparent;
-    /* 回复气泡框背景透明 */
-    overflow-y: auto;
-    /* 当内容超出时显示滚动条 */
-    max-height: 40%;
-}
-
-/* 添加浮动动画关键帧 */
-@keyframes float {
-    0% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-
-    100% {
-        transform: translateY(0px);
-    }
-}
-
-/* 为AI消息气泡添加浮动效果 */
-.message {
-    animation: float 3s ease-in-out infinite;
-    background-color: rgba(241, 241, 241, 0.8);
-    /* 80%半透明 */
-    color: black;
-    padding: 15px 20px;
-    /* 增加内边距，让文字显示更舒适 */
-    margin: 10px 0;
-    border-radius: 20px;
-    width: 100%; /* 设置宽度为100% */
-    word-wrap: break-word;
-    line-height: 1.4;
-    /* 增加行高，提高可读性 */
-    box-sizing: border-box;
-}
-
-.ai-message {
-    animation: float 3s ease-in-out infinite;
-}
-
-/* 淡入动画 */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(20px); }
-}
-
-/* 基础样式重置 */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: transparent;
-}
-
-.chat-container {
-    position: relative;
-    width: 350px;
-    height: calc(100vh + 140px);
-    /* 增加窗口高度 */
-    background-color: transparent;
-    -webkit-app-region: drag;
-    padding: 0;
-}
-
-/* 隐藏所有可能的滚动条 */
-::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-}
-
-/* 消息输入框样式 */
 .chat-form {
     position: fixed;
     /* 使用fixed定位以确保始终在屏幕底部 */
@@ -211,29 +43,37 @@ body {
 
 #message-input {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
+    padding: 8px 15px;
+    border: 2px solid #ffb6c1;
+    border-radius: 25px;
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: #fff0f5;
+    /* 淡粉色背景 */
+    font-family: 'Comic Sans MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 #message-input:focus {
-    border-color: #007bff;
+    border-color: #ff69b4;
+    box-shadow: 0 2px 8px rgba(255, 105, 180, 0.3);
 }
 
 .chat-form button {
     margin-left: 10px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #cccccc, #999999);
-    /* 灰色渐变背景 */
+    padding: 8px 20px;
+    border: 2px solid #ff69b4;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #ffb6c1 0%, #ff69b4 100%);
+    /* 粉色系渐变背景 */
     color: white;
     cursor: pointer;
     -webkit-app-region: no-drag;
     font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    font-family: 'Comic Sans MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     /* 添加阴影效果 */
     transition: all 0.3s ease;
     /* 添加过渡动画 */
@@ -242,19 +82,19 @@ body {
 }
 
 .chat-form button:hover {
-    background: linear-gradient(135deg, #999999, #666666);
+    background: linear-gradient(135deg, #ff69b4, #ff1493);
     /* 悬停时的渐变背景 */
     transform: translateY(-2px);
-    /* 悬停时轻微上移 */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    /* 悬停时上移 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     /* 悬停时增强阴影 */
 }
 
-/* 为按钮添加可爱的元素 */
+/* 移除按钮上的图标 */
 .chat-form button::before {
-    content: "✉️";
-    /* 添加邮件表情符号 */
-    margin-right: 5px;
+    content: "";
+    /* 移除邮件表情符号 */
+    margin-right: 0;
 }
 
 .chat-form button::after {
@@ -273,6 +113,130 @@ body {
     left: 120%;
 }
 
+/* 聊天气泡框样式 */
+.chat-messages {
+    position: absolute;
+    top: 140px; /* 上移气泡框位置 */
+    left: 0;
+    right: 0;
+    padding: 10px;
+    z-index: 30;
+    background-color: transparent;
+    overflow-y: auto;
+    max-height: 40%;
+    width: 100%; 
+}
+
+/* 添加弹跳动画关键帧 */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+/* 为AI消息气泡添加弹跳效果 */
+.message {
+    animation: bounce 2s ease-in-out infinite;
+    background-color: rgba(255, 255, 255, 0.9); /* 更亮的背景色 */
+    color: #333;
+    padding: 15px 20px;
+    margin: 10px auto; /* 居中显示 */
+    border-radius: 25px 25px 25px 5px; /* 不规则圆角，更可爱 */
+    width: calc(100% - 40px);
+    word-wrap: break-word;
+    line-height: 1.5;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+    position: relative;
+    border: 2px solid #ffcce6; /* 粉色边框 */
+    font-family: 'Comic Sans MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 更可爱的字体 */
+    max-width: 500px; /* 限制最大宽度 */
+    text-align: left; /* 文本左对齐 */
+    box-sizing: border-box;
+}
+
+/* 在消息框左侧添加一个小尾巴 */
+.message::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 20px;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 10px solid rgba(255, 255, 255, 0.9);
+}
+
+.message.ai-message {
+    background: linear-gradient(135deg, #ff9ec9 0%, #ffb6c1 100%); /* 渐变背景 */
+    border: 2px solid #ff66a3;
+    color: white;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    max-height: none; /* 移除最大高度限制，适应长文本 */
+}
+
+.message.ai-message::before {
+    border-right: 10px solid #ff9ec9;
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(20px) scale(0.95); }
+}
+
+/* 添加弹跳动画关键帧 */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+/* 为AI消息气泡添加弹跳效果 */
+.message.ai-message {
+    animation: bounce 2s ease-in-out infinite;
+}
+
+/* 基础样式重置 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    /* 隐藏滚动条 */
+}
+
+#app {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.chat-container {
+    position: relative;
+    width: 525px;
+    height: calc(100vh + 240px); /* 增加窗口高度 */
+    background-color: transparent;
+    -webkit-app-region: drag;
+    padding: 0;
+}
+
+/* 隐藏所有可能的滚动条 */
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
 /* 拖拽区域样式 */
 .drag-handle {
     position: absolute;
@@ -283,31 +247,6 @@ body {
     -webkit-app-region: drag;
     cursor: move;
     z-index: 100;
-}
-
-/* VRM角色容器样式 */
-#character-container {
-    position: absolute;
-    top: 0;
-    /* 将模型容器顶部对齐窗口顶部 */
-    bottom: 0;
-    /* 模型容器底部对齐窗口底部 */
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 100%;
-    /* 设置模型容器高度为100% */
-    z-index: 20;
-    /* 确保模型显示在中间层 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* 角色容器内的canvas样式 */
-#character-container canvas {
-    width: 100%;
-    height: 100%;
 }
 
 /* 响应式设计 */

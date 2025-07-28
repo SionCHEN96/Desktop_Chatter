@@ -172,21 +172,13 @@ function loadFBXModel() {
       }
     });
 
-    // 调整模型位置和缩放，使角色正对观众
-    fbxModel.position.set(0, 0.12, 0);
-    fbxModel.rotation.y = 0; // 将旋转从Math.PI改为0，使角色正对观众
-    fbxModel.scale.set(0.8, 0.8, 0.8);
-    // 启用模型投射和接收阴影
-    fbxModel.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
+    // 调整模型在场景中的垂直位置，使模型显示在更合适的位置
+    fbxModel.position.set(0, 0.3, 0); // 将模型Y轴位置从0.12调整为0.2，提高模型位置
+
     scene.add(fbxModel);
 
     // 调整相机位置以更好地显示模型 - 靠近角色
-    camera.position.set(0, 1, 1.5); // 从(0, 1, 2)调整为(0, 1, 1.5)，更靠近角色
+    camera.position.set(0, 1, 3); // 将相机Z轴位置从1.5调整回2，增加一些距离以更好地显示模型
 
     // 创建动画混合器
     mixer = new THREE.AnimationMixer(fbxModel);
