@@ -116,15 +116,15 @@
 /* 聊天气泡框样式 */
 .chat-messages {
     position: absolute;
-    top: 140px; /* 上移气泡框位置 */
+    top: 0; /* 将气泡框顶部对齐窗口顶部 */
     left: 0;
     right: 0;
     padding: 10px;
     z-index: 30;
     background-color: transparent;
     overflow-y: auto;
-    max-height: 40%;
-    width: 100%; 
+    max-height: 100%; /* 设置最大高度为100% */
+    width: 100%;
 }
 
 /* 添加弹跳动画关键帧 */
@@ -167,11 +167,12 @@
 }
 
 .message.ai-message {
-    background: linear-gradient(135deg, #ff9ec9 0%, #ffb6c1 100%); /* 渐变背景 */
+    background: linear-gradient(135deg, rgba(255, 158, 201, 0.7) 0%, rgba(255, 182, 193, 0.7) 100%); /* 半透明渐变背景 */
     border: 2px solid #ff66a3;
     color: white;
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
     max-height: none; /* 移除最大高度限制，适应长文本 */
+    top: 0; /* 上移气泡框 */
 }
 
 .message.ai-message::before {
