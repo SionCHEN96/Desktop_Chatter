@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import axios from 'axios';
 import remoteMain from '@electron/remote/main/index.js';
-import { LM_STUDIO_CONFIG, validateUrl } from '../constants/appConstants.js';
+import { LM_STUDIO_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../constants/appConstants.js';
 import MemoryManagerQdrant from './memoryManagerQdrant.js';
 
 // 获取当前模块的目录名
@@ -41,12 +41,15 @@ async function getAIResponse(message) {
       await memoryManager.saveMemory(message, { role: 'user' });
     }
 
+    // 构建包含记忆的系统提示
+    const systemPrompt = await buildSystemPromptWithMemory(memoryManager, message);
+
     const response = await axios.post(
       `${LM_STUDIO_CONFIG.BASE_URL}/v1/chat/completions`,
       {
         model: LM_STUDIO_CONFIG.MODEL,
         messages: [
-          { role: 'system', content: LM_STUDIO_CONFIG.SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
         temperature: LM_STUDIO_CONFIG.TEMPERATURE,
