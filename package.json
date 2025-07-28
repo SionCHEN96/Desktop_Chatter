@@ -6,16 +6,30 @@
   "type": "module",
   "scripts": {
     "start": "electron .",
+    "start-with-db": "npm run check-docker && node start-qdrant-advanced.cjs",
+    "start-with-db-node": "node start-qdrant-node.cjs",
+    "check-docker": "node -e \"const { exec } = require('child_process'); exec('docker --version', (error, stdout) => { if (error) { console.error('错误: 未找到Docker，请先安装Docker Desktop: https://www.docker.com/products/docker-desktop/'); process.exit(1); } else { console.log('找到Docker:', stdout.trim()); } });\"",
+    "start-qdrant": "node start-qdrant-advanced.cjs",
+    "stop-qdrant": "docker stop qdrant-db || docker rm qdrant-db",
+    "start-without-docker": "node start-without-docker.cjs",
+    "start-chroma-local": "node start-chroma-local.js",
     "build": "electron-builder",
     "postinstall": "electron-builder install-app-deps"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "wait-on": "^7.2.0"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
     "@electron/remote": "^2.0.11",
     "@pixiv/three-vrm": "^3.4.2",
     "@pixiv/three-vrm-core": "^3.4.2",
+    "@qdrant/js-client-rest": "^1.12.0",
     "antd": "^5.26.6",
     "axios": "^1.6.2",
+    "chromadb": "^3.0.10",
+    "chromadb-default-embed": "^2.14.0",
     "three": "^0.153.0",
     "three-fbx-loader": "^1.0.3"
   },
