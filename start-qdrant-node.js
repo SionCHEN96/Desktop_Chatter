@@ -20,35 +20,6 @@ function installQdrantNode() {
     }
   });
 }
-#!/usr/bin/env node
-
-// 启动脚本：使用Node.js版本启动 Qdrant 并运行 Electron 应用
-
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-console.log('正在启动 Qdrant 数据库 (Node.js 版本)...');
-
-// 检查是否已安装@qdrant/qdrant-node
-let qdrantNodeAvailable = false;
-try {
-  await import('@qdrant/qdrant-node');
-  console.log('Qdrant Node.js 包已安装');
-  qdrantNodeAvailable = true;
-} catch (error) {
-  console.log('Qdrant Node.js 包未安装，将尝试安装...');
-}
-
-if (qdrantNodeAvailable) {
-  startQdrantNode();
-} else {
-  installQdrantNode();
-}
 
 function startQdrantNode() {
   console.log('启动 Qdrant Node.js 服务...');

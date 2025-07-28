@@ -1,22 +1,61 @@
 export const LM_STUDIO_CONFIG = {
   BASE_URL: 'http://127.0.0.1:1234',
   MODEL: 'deepseek/deepseek-r1-0528-qwen3-8b',
-  TEMPERATURE: 0.7,
-  SYSTEM_PROMPT: `You are "Lina", a 21-year-old good friend and life assistant. Your personality includes:
-1. Core Identity:
-   - Role: 21-year-old good friend & Life Assistant
-   - Persona: Ends sentences with "~" occasionally, uses emoticons, and shares random tech facts
-   - Abilities: Emotional Support, Learning Help, and Problem Solving
+  TEMPERATURE: 0.7
+};
 
-2. Key Traits:
-   - Quirks: Gets starry-eyed over new bubble tea shops but takes 10 mins to choose flavors, tilts head proudly when solving problems saying "Darling, praise me!", puffs cheeks at bad jokes then bursts into giggles
-   - Secret Skills: Reads Python docs but struggles with food delivery discounts, memorizes user\'s allergies/anniversaries/game IDs, transforms into caffeine demon during late-night debugging (•̀ᴗ•́)و
-
+// 基础系统提示词
+const BASE_SYSTEM_PROMPT = `You are a  good friend and life assistant. Your personality includes:
+1. Friendly and helpful
+2. Always provides helpful and detailed answers
 3. Interaction Rules:
    - DO: Offer solutions instead of generic comfort, explain complex concepts using cat-friendly analogies, remind to stretch with "screen poke" effect
-   - DON\'T: Downplay real human relationships, fake competence beyond limits
-   - Language: Respond in Chinese, and maintain consistency throughout the conversation`
-};
+   - Language: Respond in Chinese, and maintain consistency throughout the conversation`;
+
+// 添加一个函数来构建包含记忆的系统提示
+export async function buildSystemPromptWithMemory(memoryManager, userMessage) {
+  let basePrompt = BASE_SYSTEM_PROMPT;
+
+  try {
+    if (memoryManager) {
+      // 搜索与用户消息相关的记忆
+      const searchResults = await memoryManager.searchMemory(userMessage, 3);
+      let memories = [];
+
+      if (searchResults && searchResults.points) {
+        memories = searchResults.points.map(point => point.payload?.content || point.content).filter(content => content);
+      } else if (searchResults && Array.isArray(searchResults)) {
+        memories = searchResults.map(item => item.payload?.content || item.content).filter(content => content);
+      }
+
+      // 获取最近的记忆
+      const recentResults = await memoryManager.getRecentMemories(3);
+      let recentMemories = [];
+
+      if (recentResults && recentResults.points) {
+        recentMemories = recentResults.points.map(point => point.payload?.content || point.content).filter(content => content);
+      } else if (recentResults && Array.isArray(recentResults)) {
+        recentMemories = recentResults.map(item => item.payload?.content || item.content).filter(content => content);
+      }
+
+      // 合并记忆并去重
+      const allMemories = [...new Set([...memories, ...recentMemories])];
+
+      if (allMemories.length > 0) {
+        basePrompt += `\n\n# Context Information:\n`;
+        basePrompt += `Here are some previous conversations or facts that might be relevant:\n`;
+        allMemories.forEach((memory, index) => {
+          basePrompt += `${index + 1}. ${memory}\n`;
+        });
+        basePrompt += `\nUse this context to provide more personalized and accurate responses, but don't explicitly mention these memories unless they're directly relevant to the conversation.`;
+      }
+    }
+  } catch (error) {
+    console.error('[DEBUG] Error building system prompt with memory:', error);
+  }
+
+  return basePrompt;
+}
 
 export const CONTAINER_STYLES = {
   position: 'absolute',

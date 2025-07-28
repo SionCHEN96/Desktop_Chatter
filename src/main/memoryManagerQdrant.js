@@ -7,6 +7,9 @@ class MemoryManagerQdrant {
     this.initialized = false;
     // 降级存储方案
     this.fallbackStorage = [];
+    // 添加连接重试计数器
+    this.retryCount = 0;
+    this.maxRetries = 3;
   }
 
   async initialize() {
@@ -17,7 +20,8 @@ class MemoryManagerQdrant {
       // 初始化 Qdrant 客户端，连接到本地服务
       this.client = new QdrantClient({ 
         host: 'localhost', 
-        port: 6333 
+        port: 6333,
+        timeout: 5000 // 添加超时设置
       });
       
       // 测试连接 - 使用更简单的方法
@@ -40,11 +44,18 @@ class MemoryManagerQdrant {
       }
       
       this.initialized = true;
+      this.retryCount = 0; // 重置重试计数
       console.log('[MemoryManagerQdrant] Qdrant initialized successfully');
     } catch (error) {
+      // 检查是否是模块未找到错误
+      if (error.code === 'ERR_MODULE_NOT_FOUND') {
+        console.error('[MemoryManagerQdrant] Qdrant client module not found. Please run "npm install @qdrant/js-client-rest" to install the required package.');
+      }
       // 检查是否是连接错误
-      if (error.cause && error.cause.code === 'ECONNREFUSED') {
+      else if (error.cause && (error.cause.code === 'ECONNREFUSED' || error.cause.code === 'ENOTFOUND')) {
         console.log('[MemoryManagerQdrant] Qdrant service not available, using fallback storage method');
+      } else if (error.message && error.message.includes('fetch failed')) {
+        console.log('[MemoryManagerQdrant] Qdrant connection failed, using fallback storage method');
       } else {
         console.error('[MemoryManagerQdrant] Failed to initialize Qdrant:', error);
       }
@@ -100,8 +111,18 @@ class MemoryManagerQdrant {
       });
       
       console.log('[MemoryManagerQdrant] Memory saved:', { id, content, metadata });
+      this.retryCount = 0; // 成功后重置重试计数
     } catch (error) {
       console.error('[MemoryManagerQdrant] Failed to save memory to Qdrant, using fallback storage:', error);
+      // 如果是连接错误且重试次数未达到上限，则尝试重新初始化
+      if ((error.message && error.message.includes('fetch failed')) && this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        console.log(`[MemoryManagerQdrant] Attempting to reconnect... (Retry ${this.retryCount}/${this.maxRetries})`);
+        await this.initialize();
+        // 递归调用一次
+        return await this.saveMemory(content, metadata);
+      }
+      
       // 如果Qdrant保存失败，使用降级存储
       const memory = {
         id: Date.now().toString(),
@@ -157,9 +178,19 @@ class MemoryManagerQdrant {
       });
       
       console.log('[MemoryManagerQdrant] Memory search results:', results);
+      this.retryCount = 0; // 成功后重置重试计数
       return results;
     } catch (error) {
       console.error('[MemoryManagerQdrant] Failed to search memory in Qdrant, using fallback storage:', error);
+      // 如果是连接错误且重试次数未达到上限，则尝试重新初始化
+      if ((error.message && error.message.includes('fetch failed')) && this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        console.log(`[MemoryManagerQdrant] Attempting to reconnect... (Retry ${this.retryCount}/${this.maxRetries})`);
+        await this.initialize();
+        // 递归调用一次
+        return await this.searchMemory(query, nResults);
+      }
+      
       // 如果Qdrant搜索失败，使用降级存储
       const results = this.fallbackStorage
         .filter(item => item.content.includes(query))
@@ -205,9 +236,19 @@ class MemoryManagerQdrant {
         with_payload: true
       });
       
+      this.retryCount = 0; // 成功后重置重试计数
       return results;
     } catch (error) {
       console.error('[MemoryManagerQdrant] Failed to get recent memories from Qdrant, using fallback storage:', error);
+      // 如果是连接错误且重试次数未达到上限，则尝试重新初始化
+      if ((error.message && error.message.includes('fetch failed')) && this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        console.log(`[MemoryManagerQdrant] Attempting to reconnect... (Retry ${this.retryCount}/${this.maxRetries})`);
+        await this.initialize();
+        // 递归调用一次
+        return await this.getRecentMemories(limit);
+      }
+      
       // 如果Qdrant获取失败，使用降级存储
       const results = this.fallbackStorage.slice(-limit).reverse();
       return {
@@ -259,9 +300,19 @@ class MemoryManagerQdrant {
         with_payload: true
       });
       
+      this.retryCount = 0; // 成功后重置重试计数
       return results;
     } catch (error) {
       console.error('[MemoryManagerQdrant] Failed to get all memories from Qdrant, using fallback storage:', error);
+      // 如果是连接错误且重试次数未达到上限，则尝试重新初始化
+      if ((error.message && error.message.includes('fetch failed')) && this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        console.log(`[MemoryManagerQdrant] Attempting to reconnect... (Retry ${this.retryCount}/${this.maxRetries})`);
+        await this.initialize();
+        // 递归调用一次
+        return await this.getAllMemories();
+      }
+      
       // 如果Qdrant获取失败，使用降级存储
       const results = [...this.fallbackStorage].reverse();
       return {

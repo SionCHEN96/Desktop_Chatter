@@ -117,7 +117,11 @@ function createQdrantContainer() {
   let qdrantCmd;
   
   if (process.platform === 'win32') {
-    qdrantCmd = `docker run -d -p 6333:6333 -p 6334:6334 --name qdrant-db -v "${cwd}/qdrant_data:/qdrant/storage" qdrant/qdrant`;
+    // 添加环境变量以跳过文件系统检查，解决Windows文件系统兼容性问题
+    qdrantCmd = `docker run -d -p 6333:6333 -p 6334:6334 --name qdrant-db ` +
+                `-v "${cwd}/qdrant_data:/qdrant/storage" ` +
+                `-e QDRANT__STORAGE__ENABLE_FS_CHECK=false ` +
+                `qdrant/qdrant`;
   } else {
     qdrantCmd = `docker run -d -p 6333:6333 -p 6334:6334 --name qdrant-db -v "$(pwd)/qdrant_data:/qdrant/storage:z" qdrant/qdrant`;
   }
