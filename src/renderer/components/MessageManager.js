@@ -153,13 +153,7 @@ export class MessageManager {
     contentElement.classList.add('message-content');
     contentElement.textContent = message.text;
 
-    // 创建时间戳
-    const timestampElement = document.createElement('div');
-    timestampElement.classList.add('message-timestamp');
-    timestampElement.textContent = this.formatTimestamp(message.timestamp);
-
     messageElement.appendChild(contentElement);
-    messageElement.appendChild(timestampElement);
 
     return messageElement;
   }
@@ -247,18 +241,7 @@ export class MessageManager {
     return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  /**
-   * 格式化时间戳
-   * @private
-   * @param {Date} timestamp - 时间戳
-   * @returns {string} 格式化的时间
-   */
-  formatTimestamp(timestamp) {
-    return timestamp.toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
+
 
   /**
    * 获取所有消息
