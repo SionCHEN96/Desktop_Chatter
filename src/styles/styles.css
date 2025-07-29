@@ -32,41 +32,50 @@
     transform: none;
 }
 
-/* 可爱的折叠按钮样式 - 位于左侧面板右下角 */
+/* 可爱的粉色消息按钮 - 位于红框左侧，不遮挡面部 */
 .toggle-chat-button {
     position: fixed;
-    bottom: 80px;
-    left: calc(50% - 30px);
-    width: 60px;
-    height: 60px;
+    top: 120px;
+    left: calc(15vw - 25px);
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ffb6c1, #ff69b4);
+    background: linear-gradient(145deg, #ffb6c1, #ff91a4);
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     -webkit-app-region: no-drag;
     z-index: 50;
-    box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
-    transition: all 0.3s ease;
-    border: 3px solid rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
+    box-shadow:
+        0 8px 16px rgba(255, 105, 180, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 rgba(255, 20, 147, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 182, 193, 0.5);
+    backdrop-filter: blur(20px);
 }
 
 .toggle-chat-button:hover {
-    transform: translateX(-50%) scale(1.1);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-    background: linear-gradient(135deg, #ff69b4, #ff1493);
+    transform: scale(1.1) translateY(-2px);
+    background: linear-gradient(145deg, #ff69b4, #ff1493);
+    box-shadow:
+        0 12px 24px rgba(255, 105, 180, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 rgba(255, 20, 147, 0.15);
 }
 
 .toggle-chat-button:active {
-    transform: translateX(-50%) scale(0.95);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transform: scale(0.95) translateY(1px);
+    background: linear-gradient(145deg, #ff91a4, #ff69b4);
+    box-shadow:
+        0 4px 8px rgba(255, 105, 180, 0.2),
+        inset 0 2px 4px rgba(255, 20, 147, 0.15);
 }
 
 .toggle-chat-button.collapsed {
     opacity: 0;
-    transform: translateX(-50%) scale(0.8);
+    transform: scale(0.8) translateY(10px);
     pointer-events: none;
 }
 
@@ -193,7 +202,7 @@
     }
 }
 
-/* AI消息气泡样式 */
+/* AI消息气泡样式 - 定位在角色脸部右侧 */
 .ai-message-bubble {
     animation: bubbleAppear 0.5s ease-out forwards;
     background: linear-gradient(135deg, rgba(255, 158, 201, 0.95) 0%, rgba(255, 182, 193, 0.95) 100%);
@@ -203,13 +212,13 @@
     border-radius: 20px 20px 20px 5px;
     width: auto;
     min-width: 200px;
-    max-width: 300px;
+    max-width: 350px;
     word-wrap: break-word;
     line-height: 1.5;
     box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    position: fixed;
+    top: 60px;
+    left: 40vw;
     border: 2px solid rgba(255, 255, 255, 0.3);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: left;
@@ -235,12 +244,12 @@
     box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
 }
 
-/* AI消息气泡的小尾巴 */
+/* AI消息气泡的小尾巴 - 指向左侧角色 */
 .ai-message-bubble::before {
     content: '';
     position: absolute;
     left: -12px;
-    top: 20px;
+    top: 25px;
     width: 0;
     height: 0;
     border-top: 12px solid transparent;
@@ -249,21 +258,7 @@
     filter: drop-shadow(0 2px 4px rgba(255, 105, 180, 0.3));
 }
 
-.message.ai-message {
-    background: linear-gradient(135deg, rgba(255, 158, 201, 0.7) 0%, rgba(255, 182, 193, 0.7) 100%);
-    /* 半透明渐变背景 */
-    border: 2px solid #ff66a3;
-    color: white;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-    max-height: none;
-    /* 移除最大高度限制，适应长文本 */
-    top: 0;
-    /* 上移气泡框 */
-}
 
-.message.ai-message::before {
-    border-right: 10px solid #ff9ec9;
-}
 
 /* 淡入动画 */
 @keyframes fadeIn {
@@ -303,10 +298,7 @@
     }
 }
 
-/* 为AI消息气泡添加弹跳效果 */
-.message.ai-message {
-    animation: bounce 2s ease-in-out infinite;
-}
+
 
 /* 基础样式重置 */
 * {
@@ -337,7 +329,7 @@ body {
     background: transparent;
     -webkit-app-region: drag;
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* 主要内容区域：左右布局 */
