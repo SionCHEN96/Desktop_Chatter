@@ -5,6 +5,7 @@
 
 import { MessageManager } from './MessageManager.js';
 import { InputManager } from './InputManager.js';
+import { ChatToggleManager } from './ChatToggleManager.js';
 
 export class ChatContainer {
   constructor(characterManager) {
@@ -18,6 +19,7 @@ export class ChatContainer {
     // 初始化管理器
     this.messageManager = new MessageManager(this.chatMessages);
     this.inputManager = new InputManager(this.chatForm, this.messageInput);
+    this.toggleManager = new ChatToggleManager();
 
     this.initEventListeners();
   }
@@ -56,6 +58,9 @@ export class ChatContainer {
 
     // 设置输入为处理状态
     this.inputManager.setProcessing(true);
+
+    // 发送消息后隐藏输入框
+    this.toggleManager.forceHideInput();
   }
 
   /**

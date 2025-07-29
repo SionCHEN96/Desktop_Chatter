@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>输入框切换功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+        }
+        .instruction {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .instruction h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>AI伴侣输入框切换功能测试</h1>
+        
+        <div class="instruction">
+            <h3>🎯 测试目标</h3>
+            <p>验证下方的粉色圆形按钮能够正确控制输入框的显示和隐藏。</p>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">✨ 新增功能特性</div>
+            <div class="test-description">
+                以下是已实现的输入框切换功能：
+            </div>
+            <ul class="feature-list">
+                <li>初始状态：输入框隐藏，切换按钮显示</li>
+                <li>点击按钮：显示输入框，隐藏切换按钮</li>
+                <li>发送消息：自动隐藏输入框，显示切换按钮</li>
+                <li>ESC键：快速隐藏输入框</li>
+                <li>点击空白区域：自动隐藏输入框</li>
+                <li>平滑动画：所有切换都有过渡效果</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📋 测试步骤</div>
+            <div class="test-description">
+                请按照以下步骤测试功能：
+            </div>
+            
+            <div class="step">
+                <strong>步骤 1：</strong> 启动AI伴侣应用，确认初始状态下只显示粉色圆形按钮，输入框处于隐藏状态。
+            </div>
+            
+            <div class="step">
+                <strong>步骤 2：</strong> 点击粉色圆形按钮，观察输入框是否平滑显示，按钮是否隐藏，输入框是否自动获得焦点。
+            </div>
+            
+            <div class="step">
+                <strong>步骤 3：</strong> 在输入框中输入测试消息（如"你好"），点击Send按钮或按Enter键发送。
+            </div>
+            
+            <div class="step">
+                <strong>步骤 4：</strong> 确认消息发送后，输入框自动隐藏，粉色按钮重新显示。
+            </div>
+            
+            <div class="step">
+                <strong>步骤 5：</strong> 再次点击按钮显示输入框，然后按ESC键，确认输入框隐藏。
+            </div>
+            
+            <div class="step">
+                <strong>步骤 6：</strong> 再次点击按钮显示输入框，然后点击应用程序的空白区域，确认输入框隐藏。
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🎨 视觉效果验证</div>
+            <div class="test-description">
+                确认以下视觉效果正常：
+            </div>
+            <ul class="feature-list">
+                <li>按钮悬停时有放大和颜色变化效果</li>
+                <li>按钮点击时有缩小效果</li>
+                <li>输入框显示/隐藏有平滑的淡入淡出动画</li>
+                <li>输入框显示时自动获得焦点</li>
+                <li>输入框隐藏时内容被清空</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">⚙️ 技术实现说明</div>
+            <div class="test-description">
+                <strong>新增组件：</strong> ChatToggleManager.js<br>
+                <strong>修改组件：</strong> ChatContainer.js<br>
+                <strong>样式调整：</strong> styles.css<br>
+                <strong>HTML调整：</strong> index.html（初始状态设为collapsed）
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔧 交互逻辑</div>
+            <div class="test-description">
+                <strong>显示输入框时：</strong>
+                <ul>
+                    <li>切换按钮添加 'collapsed' 类（透明度0，缩放0.8，禁用点击）</li>
+                    <li>输入框移除 'collapsed' 类（透明度1，正常位置）</li>
+                    <li>300ms后自动聚焦输入框</li>
+                </ul>
+                
+                <strong>隐藏输入框时：</strong>
+                <ul>
+                    <li>输入框添加 'collapsed' 类（透明度0，向下移动100%）</li>
+                    <li>切换按钮移除 'collapsed' 类（恢复显示）</li>
+                    <li>清空输入框内容并失去焦点</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">✅ 预期结果</div>
+            <div class="test-description">
+                如果所有功能正常，您应该看到：
+            </div>
+            <div class="status success">
+                ✓ 按钮点击响应迅速，动画流畅<br>
+                ✓ 输入框显示隐藏逻辑正确<br>
+                ✓ 消息发送后自动隐藏输入框<br>
+                ✓ 键盘和鼠标交互都正常工作<br>
+                ✓ 视觉效果美观，用户体验良好
+            </div>
+        </div>
+
+        <div class="instruction">
+            <h3>🚀 使用提示</h3>
+            <p><strong>快捷操作：</strong></p>
+            <ul>
+                <li>点击粉色按钮 → 显示输入框</li>
+                <li>输入消息 + Enter → 发送并隐藏</li>
+                <li>ESC键 → 快速隐藏输入框</li>
+                <li>点击空白处 → 自动隐藏输入框</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('输入框切换功能测试页面已加载');
+            console.log('请切换到AI伴侣应用进行实际测试');
+            
+            // 显示当前时间
+            const now = new Date().toLocaleString();
+            console.log('测试开始时间:', now);
+        });
+    </script>
+</body>
+</html>
