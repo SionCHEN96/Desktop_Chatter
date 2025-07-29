@@ -1,5 +1,5 @@
 import React from 'react';
-import './MessageComponent.css'; // 引入局部样式文件
+import './messageComponent.css'; // 引入局部样式文件
 
 const MessageComponent = () => {
     return (

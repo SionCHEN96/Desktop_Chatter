@@ -48,20 +48,10 @@ class MemoryManagerQdrant {
       this.retryCount = 0; // 重置重试计数
       console.log('[MemoryManagerQdrant] Qdrant initialized successfully');
     } catch (error) {
-      // 检查是否是模块未找到错误
-      if (error.code === 'ERR_MODULE_NOT_FOUND') {
-        console.error('[MemoryManagerQdrant] Qdrant client module not found. Please run "npm install @qdrant/js-client-rest" to install the required package.');
-      }
-      // 检查是否是连接错误
-      else if (error.cause && (error.cause.code === 'ECONNREFUSED' || error.cause.code === 'ENOTFOUND')) {
-        console.log('[MemoryManagerQdrant] Qdrant service not available, using fallback storage method');
-      } else if (error.message && error.message.includes('fetch failed')) {
-        console.log('[MemoryManagerQdrant] Qdrant connection failed, using fallback storage method');
-      } else {
-        console.error('[MemoryManagerQdrant] Failed to initialize Qdrant:', error);
-      }
-      console.log('[MemoryManagerQdrant] Using fallback storage method');
-      this.initialized = true; // 仍然标记为已初始化，使用降级存储
+      console.error('[MemoryManagerQdrant] Error during initialization:', error);
+      // 降级到基础MemoryManager
+      const MemoryManager = (await import('./memoryManager.js')).default;
+      return new MemoryManager();
     }
   }
 
