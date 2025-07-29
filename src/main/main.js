@@ -3,8 +3,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import axios from 'axios';
 import remoteMain from '@electron/remote/main/index.js';
-import { LM_STUDIO_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../constants/appConstants.js';
-import MemoryManagerQdrant from './memoryManagerQdrant.js';
+import { LM_STUDIO_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../config/index.js';
+import MemoryManagerQdrant from '../core/memory/index.js';
 
 // 获取当前模块的目录名
 const __filename = fileURLToPath(import.meta.url);

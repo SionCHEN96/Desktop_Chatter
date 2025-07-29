@@ -1,4 +1,4 @@
-import { initCharacterContainer, playSimpleAnimation, playAnimation } from './components/characterContainer.js';
+import { initCharacterContainer, playSimpleAnimation, playAnimation } from '../core/character/index.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化3D角色
