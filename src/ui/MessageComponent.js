@@ -1,5 +1,5 @@
 import React from 'react';
-import './messageComponent.css'; // 引入局部样式文件
+import './MessageComponent.css'; // 引入局部样式文件
 
 const MessageComponent = ({ text, isUser = false }) => {
     return (
