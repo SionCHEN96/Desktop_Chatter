@@ -175,6 +175,20 @@ export class QdrantStrategy extends MemoryManager {
   }
 
   /**
+   * 生成简单的向量表示（占位实现）
+   * @param {string} text - 输入文本
+   * @returns {Array<number>} - 向量表示
+   */
+  generateSimpleVector(text) {
+    // 这是一个简单的占位实现，实际应用中应该使用真正的嵌入模型
+    const vector = new Array(128).fill(0);
+    for (let i = 0; i < text.length && i < 128; i++) {
+      vector[i] = text.charCodeAt(i) / 255;
+    }
+    return vector;
+  }
+
+  /**
    * 获取所有记忆
    * @returns {Promise<Array>}
    */

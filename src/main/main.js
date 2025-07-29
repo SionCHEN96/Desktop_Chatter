@@ -20,7 +20,28 @@ let memoryManager;
 
 // 初始化内存管理器
 async function initializeMemoryManager() {
-  memoryManager = await MemoryManagerFactory.createMemoryManager('qdrant');
+  try {
+    memoryManager = await MemoryManagerFactory.createMemoryManager('qdrant');
+    console.log('[MemoryManager] Successfully initialized with Qdrant strategy');
+  } catch (error) {
+    console.error('[MemoryManager] Failed to initialize with Qdrant strategy:', error.message);
+    try {
+      // 尝试使用ChromaDB作为备选
+      memoryManager = await MemoryManagerFactory.createMemoryManager('chromadb');
+      console.log('[MemoryManager] Successfully initialized with ChromaDB strategy');
+    } catch (chromaError) {
+      console.error('[MemoryManager] Failed to initialize with ChromaDB strategy:', chromaError.message);
+      try {
+        // 最后尝试使用内存存储
+        memoryManager = await MemoryManagerFactory.createMemoryManager('memory');
+        console.log('[MemoryManager] Successfully initialized with in-memory strategy');
+      } catch (memoryError) {
+        console.error('[MemoryManager] Failed to initialize with in-memory strategy:', memoryError.message);
+        console.error('[MemoryManager] All memory strategies failed to initialize');
+        memoryManager = null;
+      }
+    }
+  }
 }
 
 // 连接本地LM Studio API
@@ -29,19 +50,19 @@ async function getAIResponse(message) {
     if (!validateUrl(LM_STUDIO_CONFIG.BASE_URL)) {
       throw new Error('Invalid API URL configuration');
     }
-    
+
     console.log('[DEBUG] Sending to LM Studio:', {
       message: message,
       config: LM_STUDIO_CONFIG
     });
 
+    // 构建包含记忆的系统提示
+    let systemPrompt = await buildSystemPromptWithMemory(memoryManager, message);
+
     // 保存用户消息到长期记忆
     if (memoryManager) {
       await memoryManager.saveMemory(message, { role: 'user' });
     }
-
-    // 构建包含记忆的系统提示
-    const systemPrompt = await buildSystemPromptWithMemory(message, memoryManager);
 
     const response = await axios.post(
       `${LM_STUDIO_CONFIG.BASE_URL}/v1/chat/completions`,
@@ -78,10 +99,6 @@ async function getAIResponse(message) {
     return content;
   } catch (error) {
     console.error('[ERROR] AI response error:', error.message);
-    if (error.response) {
-      console.error('[ERROR] Response data:', error.response.data);
-      console.error('[ERROR] Response status:', error.response.status);
-    }
     return '抱歉，我无法处理您的请求。请检查LM Studio是否正在运行并正确配置。';
   }
 }
@@ -125,11 +142,9 @@ app.on('window-all-closed', () => {
 
 // IPC消息处理
 ipcMain.on('message', async (event, message) => {
-  console.log('[DEBUG] Received message:', message);
   try {
     const response = await getAIResponse(message);
-    console.log('[DEBUG] Sending response:', response);
-    event.reply('response', response);
+      event.reply('response', response);
   } catch (error) {
     console.error('[ERROR] Failed to get AI response:', error);
     event.reply('response', '抱歉，处理您的请求时出现错误。');
