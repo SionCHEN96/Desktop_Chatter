@@ -1,3 +1,3 @@
-import MemoryManagerQdrant from './MemoryManagerQdrant.js';
+import MemoryManagerQdrant from './memoryManagerQdrant.js';
 
 export default MemoryManagerQdrant;
