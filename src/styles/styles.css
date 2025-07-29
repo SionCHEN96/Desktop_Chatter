@@ -189,18 +189,7 @@
     display: block;
 }
 
-/* 添加弹跳动画关键帧 */
-@keyframes bounce {
 
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-15px);
-    }
-}
 
 /* AI消息气泡样式 - 定位在角色脸部右侧 */
 .ai-message-bubble {
@@ -257,48 +246,6 @@
     border-right: 12px solid rgba(255, 158, 201, 0.95);
     filter: drop-shadow(0 2px 4px rgba(255, 105, 180, 0.3));
 }
-
-
-
-/* 淡入动画 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.8);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-
-    to {
-        opacity: 0;
-        transform: translateY(-20px) scale(0.9);
-    }
-}
-
-/* 添加弹跳动画关键帧 */
-@keyframes bounce {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-15px);
-    }
-}
-
-
 
 /* 基础样式重置 */
 * {

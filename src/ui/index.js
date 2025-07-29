@@ -3,5 +3,5 @@
  * 提供所有可复用UI组件的统一访问入口
  */
 
-// 消息组件
-export { default as MessageComponent } from './MessageComponent.js';
+// 当前没有可复用的UI组件
+// 所有UI逻辑都在 MessageManager 中使用原生DOM操作实现
