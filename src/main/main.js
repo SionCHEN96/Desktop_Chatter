@@ -1,134 +1,61 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import axios from 'axios';
-import remoteMain from '@electron/remote/main/index.js';
-import { LM_STUDIO_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../config/index.js';
-import { MemoryManagerFactory } from '../core/memory/index.js';
+/**
+ * AI Companion 主进程入口
+ * 使用模块化架构，将功能分离到不同的服务中
+ */
 
-// 获取当前模块的目录名
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { app, BrowserWindow } from 'electron';
+import { AIService, WindowService, IPCService, MemoryService } from './services/index.js';
 
 // 解决WebGL问题的命令行参数
 app.commandLine.appendSwitch('ignore-gpu-blacklist');
 app.commandLine.appendSwitch('disable-gpu');
 app.commandLine.appendSwitch('disable-gpu-compositing');
 
-let mainWindow;
-let memoryManager;
+// 服务实例
+let memoryService;
+let aiService;
+let windowService;
+let ipcService;
 
-// 初始化内存管理器
-async function initializeMemoryManager() {
+/**
+ * 初始化所有服务
+ * @returns {Promise<void>}
+ */
+async function initializeServices() {
   try {
-    memoryManager = await MemoryManagerFactory.createMemoryManager('qdrant');
-    console.log('[MemoryManager] Successfully initialized with Qdrant strategy');
+    // 初始化内存服务
+    memoryService = new MemoryService();
+    await memoryService.initializeMemoryManager();
+
+    // 初始化AI服务
+    aiService = new AIService(memoryService.getMemoryManager());
+
+    // 初始化窗口服务
+    windowService = new WindowService();
+
+    // 初始化IPC服务
+    ipcService = new IPCService(aiService, windowService);
+
+    console.log('[Main] All services initialized successfully');
   } catch (error) {
-    console.error('[MemoryManager] Failed to initialize with Qdrant strategy:', error.message);
-    try {
-      // 尝试使用ChromaDB作为备选
-      memoryManager = await MemoryManagerFactory.createMemoryManager('chromadb');
-      console.log('[MemoryManager] Successfully initialized with ChromaDB strategy');
-    } catch (chromaError) {
-      console.error('[MemoryManager] Failed to initialize with ChromaDB strategy:', chromaError.message);
-      try {
-        // 最后尝试使用内存存储
-        memoryManager = await MemoryManagerFactory.createMemoryManager('memory');
-        console.log('[MemoryManager] Successfully initialized with in-memory strategy');
-      } catch (memoryError) {
-        console.error('[MemoryManager] Failed to initialize with in-memory strategy:', memoryError.message);
-        console.error('[MemoryManager] All memory strategies failed to initialize');
-        memoryManager = null;
-      }
-    }
+    console.error('[Main] Failed to initialize services:', error);
   }
 }
 
-// 连接本地LM Studio API
-async function getAIResponse(message) {
-  try {
-    if (!validateUrl(LM_STUDIO_CONFIG.BASE_URL)) {
-      throw new Error('Invalid API URL configuration');
-    }
+/**
+ * 创建应用窗口
+ */
 
-    console.log('[DEBUG] Sending to LM Studio:', {
-      message: message,
-      config: LM_STUDIO_CONFIG
-    });
-
-    // 构建包含记忆的系统提示
-    let systemPrompt = await buildSystemPromptWithMemory(memoryManager, message);
-
-    // 保存用户消息到长期记忆
-    if (memoryManager) {
-      await memoryManager.saveMemory(message, { role: 'user' });
-    }
-
-    const response = await axios.post(
-      `${LM_STUDIO_CONFIG.BASE_URL}/v1/chat/completions`,
-      {
-        model: LM_STUDIO_CONFIG.MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        temperature: LM_STUDIO_CONFIG.TEMPERATURE,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      }
-    );
-
-    console.log('[DEBUG] LM Studio response:', response.data);
-    let content = response.data.choices[0].message.content;
-    
-    // 移除<think>标签及其内容
-    content = content.replace(/<think>[\s\S]*?<\/think>/g, '');
-    
-    // 移除可能残留的空白行
-    content = content.replace(/^\s*[\r\n]/gm, '').trim();
-    
-    // 保存AI响应到长期记忆
-    if (memoryManager) {
-      await memoryManager.saveMemory(content, { role: 'assistant' });
-    }
-    
-    return content;
-  } catch (error) {
-    console.error('[ERROR] AI response error:', error.message);
-    return '抱歉，我无法处理您的请求。请检查LM Studio是否正在运行并正确配置。';
-  }
+function createWindow() {
+  windowService.createMainWindow();
 }
 
-function createWindow () {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  mainWindow = new BrowserWindow({
-    width: 350,
-    height: 600,
-    transparent: true,
-    frame: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: join(__dirname, '../preload.js')
-    }
-  });
-
-  mainWindow.loadFile(join(__dirname, '../../index.html'));
-
-  // 初始化@electron/remote模块
-  remoteMain.enable(mainWindow.webContents);
-
-  // 启用开发者工具
-  // mainWindow.webContents.openDevTools();
-}
-
+/**
+ * 应用启动处理
+ */
 app.whenReady().then(async () => {
-  // 初始化内存管理器
-  await initializeMemoryManager();
+  // 初始化所有服务
+  await initializeServices();
   createWindow();
 
   app.on('activate', () => {
@@ -136,24 +63,25 @@ app.whenReady().then(async () => {
   });
 });
 
+/**
+ * 应用退出处理
+ */
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
-
-// IPC消息处理
-ipcMain.on('message', async (event, message) => {
-  try {
-    const response = await getAIResponse(message);
-      event.reply('response', response);
-  } catch (error) {
-    console.error('[ERROR] Failed to get AI response:', error);
-    event.reply('response', '抱歉，处理您的请求时出现错误。');
+  if (process.platform !== 'darwin') {
+    // 清理IPC监听器
+    if (ipcService) {
+      ipcService.removeAllListeners();
+    }
+    app.quit();
   }
 });
 
-// 添加窗口关闭处理
-ipcMain.on('close-window', () => {
-  if (mainWindow) {
-    mainWindow.close();
+/**
+ * 应用退出前清理
+ */
+app.on('before-quit', () => {
+  console.log('[Main] Application is quitting, cleaning up...');
+  if (ipcService) {
+    ipcService.removeAllListeners();
   }
 });
