@@ -2,7 +2,8 @@
   "name": "ai-companion",
   "version": "1.0.0",
   "description": "AI虚拟助手MVP",
-  "main": "src/main/main.js",
+  "main": "src/main/main.cjs",
+  "type": "module",
   "scripts": {
     "start": "electron .",
     "start-with-db": "concurrently \"npm run start-qdrant-full\" \"wait-on http://localhost:6333 && electron .\"",
@@ -29,9 +30,10 @@
   "dependencies": {
     "@electron/remote": "^2.0.11",
     "@mlc-ai/web-llm": "^0.2.31",
+    "@pixiv/three-vrm": "^3.4.2",
     "axios": "^1.4.0",
+    "chromadb": "^3.0.10",
     "qdrant": "^1.3.1",
-    "three": "0.153.0",
-    "three-vrm": "^3.4.2"
+    "three": "0.153.0"
   }
 }
