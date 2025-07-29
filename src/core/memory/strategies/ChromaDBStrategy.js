@@ -1,6 +1,5 @@
 import { MemoryManager } from '../MemoryManager.js';
 import { ChromaClient } from 'chromadb';
-import { DefaultEmbeddingFunction } from '@chroma-core/default-embed';
 
 /**
  * ChromaDB内存管理策略
@@ -24,30 +23,30 @@ export class ChromaDBStrategy extends MemoryManager {
       this.client = new ChromaClient({
         baseUrl: "http://localhost:8000"
       });
-      
+
       // 测试连接
       await this.client.heartbeat();
-      
+
       // 创建或获取集合
       this.collection = await this.client.getOrCreateCollection({
         name: "ai_memory"
       });
-      
+
       this.initialized = true;
       console.log('[ChromaDBStrategy] ChromaDB initialized successfully with local server');
     } catch (error) {
       console.warn('[ChromaDBStrategy] Failed to connect to local ChromaDB server:', error);
-      
+
       try {
         // 如果无法连接到本地服务，则尝试使用内存模式
         console.log('[ChromaDBStrategy] Falling back to in-memory mode');
         this.client = new ChromaClient();
-        
+
         // 创建或获取集合
         this.collection = await this.client.getOrCreateCollection({
           name: "ai_memory"
         });
-        
+
         this.initialized = true;
         console.log('[ChromaDBStrategy] ChromaDB initialized successfully in memory mode');
       } catch (fallbackError) {
@@ -79,14 +78,14 @@ export class ChromaDBStrategy extends MemoryManager {
           metadata: metadata,
           timestamp: new Date().toISOString()
         };
-        
+
         this.fallbackStorage.push(memory);
-        
+
         // 保持存储大小在合理范围内
         if (this.fallbackStorage.length > 100) {
           this.fallbackStorage = this.fallbackStorage.slice(-100);
         }
-        
+
         console.log('[ChromaDBStrategy] Memory saved to fallback storage:', memory);
         return;
       }
@@ -106,7 +105,7 @@ export class ChromaDBStrategy extends MemoryManager {
         metadatas,
         documents
       });
-      
+
       console.log('[ChromaDBStrategy] Memory saved:', { ids, documents, metadatas });
     } catch (error) {
       console.error('[ChromaDBStrategy] Failed to save memory:', error);
@@ -139,9 +138,9 @@ export class ChromaDBStrategy extends MemoryManager {
         queryEmbeddings: queryEmbedding,
         nResults: limit
       });
-      
+
       console.log('[ChromaDBStrategy] Memory search results:', result);
-      
+
       // 格式化结果以匹配预期格式
       const formattedResults = [];
       if (result.ids && result.ids.length > 0) {
@@ -155,7 +154,7 @@ export class ChromaDBStrategy extends MemoryManager {
           });
         }
       }
-      
+
       return formattedResults;
     } catch (error) {
       console.error('[ChromaDBStrategy] Failed to search memory:', error);
@@ -186,9 +185,9 @@ export class ChromaDBStrategy extends MemoryManager {
       const result = await this.collection.get({
         limit: limit
       });
-      
+
       console.log('[ChromaDBStrategy] Recent memories:', result);
-      
+
       // 格式化结果以匹配预期格式
       const formattedResults = [];
       if (result.ids) {
@@ -202,7 +201,7 @@ export class ChromaDBStrategy extends MemoryManager {
           });
         }
       }
-      
+
       return formattedResults;
     } catch (error) {
       console.error('[ChromaDBStrategy] Failed to get recent memories:', error);
@@ -229,9 +228,9 @@ export class ChromaDBStrategy extends MemoryManager {
 
       // 获取所有记忆
       const result = await this.collection.get();
-      
+
       console.log('[ChromaDBStrategy] All memories:', result);
-      
+
       // 格式化结果以匹配预期格式
       const formattedResults = [];
       if (result.ids) {
@@ -245,7 +244,7 @@ export class ChromaDBStrategy extends MemoryManager {
           });
         }
       }
-      
+
       return formattedResults;
     } catch (error) {
       console.error('[ChromaDBStrategy] Failed to get all memories:', error);

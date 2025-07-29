@@ -1,5 +1,6 @@
 import { QdrantStrategy } from './strategies/QdrantStrategy.js';
 import { ChromaDBStrategy } from './strategies/ChromaDBStrategy.js';
+import { MemoryStrategy } from './strategies/MemoryStrategy.js';
 
 /**
  * 内存管理器工厂类
@@ -13,7 +14,7 @@ export class MemoryManagerFactory {
    */
   static async createMemoryManager(strategy = 'qdrant') {
     let memoryManager;
-    
+
     switch (strategy.toLowerCase()) {
       case 'qdrant':
         try {
@@ -27,7 +28,7 @@ export class MemoryManagerFactory {
           // 降级到ChromaDB
           return await this.createMemoryManager('chromadb');
         }
-        
+
       case 'chromadb':
         try {
           memoryManager = new ChromaDBStrategy();
@@ -40,25 +41,34 @@ export class MemoryManagerFactory {
           // 降级到内存存储
           return await this.createMemoryManager('fallback');
         }
-        
+
       case 'fallback':
+      case 'memory':
       default:
-        // 创建一个使用内存存储的简单实现
-        console.log('[MemoryManagerFactory] Using fallback in-memory strategy');
-        return this.createFallbackMemoryManager();
+        try {
+          memoryManager = new MemoryStrategy();
+          await memoryManager.initialize();
+          console.log('[MemoryManagerFactory] Using in-memory strategy');
+          return memoryManager;
+        } catch (error) {
+          console.error('[MemoryManagerFactory] Failed to initialize in-memory strategy:', error);
+          // 如果连内存策略都失败了，使用最简单的fallback
+          console.log('[MemoryManagerFactory] Using simple fallback strategy');
+          return this.createFallbackMemoryManager();
+        }
     }
   }
-  
+
   /**
    * 创建降级的内存管理器（纯内存存储）
    * @returns {Object} 内存管理器对象
    */
   static createFallbackMemoryManager() {
     const storage = [];
-    
+
     return {
       initialized: true,
-      
+
       async saveMemory(content, metadata = {}) {
         const memory = {
           id: Date.now().toString(),
@@ -66,17 +76,17 @@ export class MemoryManagerFactory {
           metadata: metadata,
           timestamp: new Date().toISOString()
         };
-        
+
         storage.push(memory);
-        
+
         // 保持存储大小在合理范围内
         if (storage.length > 100) {
           storage.splice(0, storage.length - 100);
         }
-        
+
         console.log('[FallbackMemoryManager] Memory saved to storage:', memory);
       },
-      
+
       async searchMemory(query, limit = 5) {
         // 简单的文本匹配搜索
         const results = storage
@@ -89,11 +99,11 @@ export class MemoryManagerFactory {
               metadata: item.metadata
             }
           }));
-          
+
         console.log('[FallbackMemoryManager] Memory search results:', results);
         return results;
       },
-      
+
       async getRecentMemories(limit = 10) {
         const recent = [...storage]
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
@@ -105,11 +115,11 @@ export class MemoryManagerFactory {
               metadata: item.metadata
             }
           }));
-          
+
         console.log('[FallbackMemoryManager] Recent memories:', recent);
         return recent;
       },
-      
+
       async getAllMemories() {
         const all = storage.map(item => ({
           id: item.id,
@@ -118,7 +128,7 @@ export class MemoryManagerFactory {
             metadata: item.metadata
           }
         }));
-        
+
         console.log('[FallbackMemoryManager] All memories:', all);
         return all;
       }
