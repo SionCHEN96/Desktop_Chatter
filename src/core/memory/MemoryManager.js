@@ -1,191 +1,68 @@
-import { ChromaClient } from 'chromadb';
-import { app } from 'electron';
-
-class MemoryManager {
+/**
+ * 内存管理器基类
+ * 定义所有内存管理策略都应该实现的接口
+ */
+export class MemoryManager {
   constructor() {
-    this.client = null;
-    this.collection = null;
-    this.initialized = false;
-    // 降级存储方案
     this.fallbackStorage = [];
   }
 
+  /**
+   * 初始化内存管理器
+   * @returns {Promise<void>}
+   */
   async initialize() {
-    try {
-      // 首先尝试连接到本地运行的ChromaDB服务
-      this.client = new ChromaClient({
-        baseUrl: "http://localhost:8000"
-      });
-      
-      // 测试连接
-      await this.client.heartbeat();
-      
-      // 创建或获取集合
-      this.collection = await this.client.getOrCreateCollection({
-        name: "ai_memory"
-      });
-      
-      this.initialized = true;
-      console.log('[MemoryManager] ChromaDB initialized successfully with local server');
-    } catch (error) {
-      console.warn('[MemoryManager] Failed to connect to local ChromaDB server:', error);
-      
-      try {
-        // 如果无法连接到本地服务，则尝试使用内存模式
-        console.log('[MemoryManager] Falling back to in-memory mode');
-        this.client = new ChromaClient();
-        
-        // 创建或获取集合
-        this.collection = await this.client.getOrCreateCollection({
-          name: "ai_memory"
-        });
-        
-        this.initialized = true;
-        console.log('[MemoryManager] ChromaDB initialized successfully in memory mode');
-      } catch (fallbackError) {
-        console.error('[MemoryManager] Failed to initialize ChromaDB:', fallbackError);
-        console.log('[MemoryManager] Using fallback storage method');
-        this.initialized = true; // 仍然标记为已初始化，使用降级存储
-      }
-    }
+    throw new Error('initialize method must be implemented by subclass');
   }
 
+  /**
+   * 保存记忆
+   * @param {string} content - 记忆内容
+   * @param {Object} metadata - 元数据
+   * @returns {Promise<void>}
+   */
   async saveMemory(content, metadata = {}) {
-    if (!this.initialized) {
-      console.warn('[MemoryManager] MemoryManager not initialized');
-      return;
-    }
-
-    try {
-      // 如果ChromaDB不可用，使用降级存储
-      if (!this.collection) {
-        const memory = {
-          id: Date.now().toString(),
-          content: content,
-          metadata: metadata,
-          timestamp: new Date().toISOString()
-        };
-        
-        this.fallbackStorage.push(memory);
-        
-        // 保持存储大小在合理范围内
-        if (this.fallbackStorage.length > 100) {
-          this.fallbackStorage = this.fallbackStorage.slice(-100);
-        }
-        
-        console.log('[MemoryManager] Memory saved to fallback storage:', memory);
-        return;
-      }
-
-      // 保存记忆到 ChromaDB
-      const id = Date.now().toString();
-      await this.collection.add({
-        ids: [id],
-        documents: [content],
-        metadatas: [metadata]
-      });
-      
-      console.log('[MemoryManager] Memory saved:', { id, content, metadata });
-    } catch (error) {
-      console.error('[MemoryManager] Failed to save memory:', error);
-    }
+    throw new Error('saveMemory method must be implemented by subclass');
   }
 
-  async searchMemory(query, nResults = 5) {
-    if (!this.initialized) {
-      console.warn('[MemoryManager] MemoryManager not initialized');
-      return [];
-    }
-
-    try {
-      // 如果ChromaDB不可用，使用降级搜索
-      if (!this.collection) {
-        // 在降级存储中进行简单文本搜索
-        const results = this.fallbackStorage
-          .filter(item => item.content.includes(query))
-          .slice(-nResults)
-          .reverse();
-        
-        console.log('[MemoryManager] Memory search results from fallback storage:', results);
-        return {
-          ids: results.map(r => r.id),
-          documents: results.map(r => r.content),
-          metadatas: results.map(r => r.metadata)
-        };
-      }
-
-      // 搜索相关记忆
-      const results = await this.collection.query({
-        queryTexts: [query],
-        nResults: nResults
-      });
-      
-      console.log('[MemoryManager] Memory search results:', results);
-      return results;
-    } catch (error) {
-      console.error('[MemoryManager] Failed to search memory:', error);
-      return [];
-    }
+  /**
+   * 搜索记忆
+   * @param {string} query - 查询内容
+   * @param {number} limit - 返回结果数量限制
+   * @returns {Promise<Array>}
+   */
+  async searchMemory(query, limit = 5) {
+    throw new Error('searchMemory method must be implemented by subclass');
   }
 
+  /**
+   * 获取最近的记忆
+   * @param {number} limit - 返回结果数量限制
+   * @returns {Promise<Array>}
+   */
   async getRecentMemories(limit = 10) {
-    if (!this.initialized) {
-      console.warn('[MemoryManager] MemoryManager not initialized');
-      return [];
-    }
-
-    try {
-      // 如果ChromaDB不可用，使用降级方法
-      if (!this.collection) {
-        const results = this.fallbackStorage.slice(-limit).reverse();
-        return {
-          ids: results.map(r => r.id),
-          documents: results.map(r => r.content),
-          metadatas: results.map(r => r.metadata)
-        };
-      }
-
-      // 获取最近的记忆
-      const results = await this.collection.get({
-        limit: limit,
-        order: "desc"
-      });
-      
-      return results;
-    } catch (error) {
-      console.error('[MemoryManager] Failed to get recent memories:', error);
-      return [];
-    }
+    throw new Error('getRecentMemories method must be implemented by subclass');
   }
-  
+
+  /**
+   * 获取所有记忆
+   * @returns {Promise<Array>}
+   */
   async getAllMemories() {
-    if (!this.initialized) {
-      console.warn('[MemoryManager] MemoryManager not initialized');
-      return [];
-    }
+    throw new Error('getAllMemories method must be implemented by subclass');
+  }
 
-    try {
-      // 如果ChromaDB不可用，使用降级方法
-      if (!this.collection) {
-        const results = [...this.fallbackStorage].reverse();
-        return {
-          ids: results.map(r => r.id),
-          documents: results.map(r => r.content),
-          metadatas: results.map(r => r.metadata)
-        };
-      }
-
-      // 获取所有记忆
-      const results = await this.collection.get({
-        limit: 100
-      });
-      
-      return results;
-    } catch (error) {
-      console.error('[MemoryManager] Failed to get all memories:', error);
-      return [];
+  /**
+   * 生成简单的向量表示（用于没有向量数据库的情况）
+   * @param {string} content - 内容
+   * @returns {Array<number>} 向量表示
+   */
+  generateSimpleVector(content) {
+    // 简单的向量生成方法，将文本转换为数字数组
+    const vector = new Array(128).fill(0);
+    for (let i = 0; i < content.length && i < 128; i++) {
+      vector[i] = content.charCodeAt(i) / 255;
     }
+    return vector;
   }
 }
-
-export default MemoryManager;

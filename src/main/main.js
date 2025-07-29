@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import axios from 'axios';
 import remoteMain from '@electron/remote/main/index.js';
 import { LM_STUDIO_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../config/index.js';
-import MemoryManagerQdrant from '../core/memory/index.js';
+import { MemoryManagerFactory } from '../core/memory/index.js';
 
 // 获取当前模块的目录名
 const __filename = fileURLToPath(import.meta.url);
@@ -20,8 +20,7 @@ let memoryManager;
 
 // 初始化内存管理器
 async function initializeMemoryManager() {
-  memoryManager = new MemoryManagerQdrant();
-  await memoryManager.initialize();
+  memoryManager = await MemoryManagerFactory.createMemoryManager('qdrant');
 }
 
 // 连接本地LM Studio API
@@ -42,7 +41,7 @@ async function getAIResponse(message) {
     }
 
     // 构建包含记忆的系统提示
-    const systemPrompt = await buildSystemPromptWithMemory(memoryManager, message);
+    const systemPrompt = await buildSystemPromptWithMemory(message, memoryManager);
 
     const response = await axios.post(
       `${LM_STUDIO_CONFIG.BASE_URL}/v1/chat/completions`,

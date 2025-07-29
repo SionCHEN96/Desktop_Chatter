@@ -12,7 +12,7 @@ const BASE_SYSTEM_PROMPT = `You are a  good friend and life assistant. Your pers
   - Language: Respond in Chinese, and maintain consistency throughout the conversation`;
 
 // 添加一个函数来构建包含记忆的系统提示
-export async function buildSystemPromptWithMemory(memoryManager, userMessage) {
+export async function buildSystemPromptWithMemory(userMessage, memoryManager) {
   let basePrompt = BASE_SYSTEM_PROMPT;
 
   try {
