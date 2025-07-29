@@ -1,0 +1,1 @@
+export { initCharacterContainer, playSimpleAnimation, playAnimation } from './CharacterContainer.js';
