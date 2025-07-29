@@ -5,7 +5,10 @@ export class ChatContainer {
     this.messageInput = document.getElementById('message-input');
     this.chatMessages = document.getElementById('chat-messages');
     this.toggleButton = document.getElementById('toggle-chat-button');
-    this.isChatExpanded = true; // 默认展开状态
+    this.isChatExpanded = false; // 默认隐藏状态
+    
+    // 初始化时隐藏聊天表单
+    this.chatForm.classList.add('collapsed');
     
     this.initEventListeners();
     this.setupCollapsibleChat();
@@ -18,6 +21,8 @@ export class ChatContainer {
       const message = this.messageInput.value.trim();
       if (message) {
         this.sendMessage(message);
+        // 发送消息后隐藏聊天表单，显示按钮
+        this.hideChat();
       }
     });
   }
@@ -26,22 +31,25 @@ export class ChatContainer {
     // 点击按钮切换聊天框显示状态
     this.toggleButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.toggleChat();
+      this.showChat();
     });
   }
 
-  toggleChat() {
-    this.isChatExpanded = !this.isChatExpanded;
+  showChat() {
+    this.isChatExpanded = true;
+    this.chatForm.classList.remove('collapsed');
+    this.toggleButton.classList.add('collapsed');
     
-    if (this.isChatExpanded) {
-      // 展开聊天框
-      this.chatForm.classList.remove('collapsed');
-      this.toggleButton.classList.remove('collapsed');
-    } else {
-      // 折叠聊天框
-      this.chatForm.classList.add('collapsed');
-      this.toggleButton.classList.add('collapsed');
-    }
+    // 显示聊天框后自动聚焦到输入框
+    setTimeout(() => {
+      this.messageInput.focus();
+    }, 300); // 等待动画完成后再聚焦
+  }
+
+  hideChat() {
+    this.isChatExpanded = false;
+    this.chatForm.classList.add('collapsed');
+    this.toggleButton.classList.remove('collapsed');
   }
 
   sendMessage(message) {
@@ -67,15 +75,9 @@ export class ChatContainer {
     // 自动滚动到底部
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     
-    // 如果聊天框是折叠状态，临时展开显示新消息，然后自动折叠
-    if (!this.isChatExpanded) {
-      this.toggleChat();
-      // 3秒后自动折叠
-      setTimeout(() => {
-        if (this.isChatExpanded) {
-          this.toggleChat();
-        }
-      }, 3000);
-    }
+    // 显示消息3秒后自动隐藏
+    setTimeout(() => {
+      // 可以在这里添加消息自动隐藏的逻辑
+    }, 3000);
   }
 }
