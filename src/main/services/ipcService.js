@@ -39,6 +39,12 @@ export class IPCService {
       this.windowService.closeMainWindow();
     });
 
+    // 处理窗口移动
+    ipcMain.on('move-window', (event, { deltaX, deltaY }) => {
+      console.log('[IPCService] 收到窗口移动请求', { deltaX, deltaY });
+      this.windowService.moveWindow(deltaX, deltaY);
+    });
+
     // 处理窗口最小化
     ipcMain.on('minimize-window', () => {
       console.log('[IPCService] Received minimize-window request');
@@ -93,6 +99,7 @@ export class IPCService {
   removeAllListeners() {
     ipcMain.removeAllListeners('message');
     ipcMain.removeAllListeners('close-window');
+    ipcMain.removeAllListeners('move-window');
     ipcMain.removeAllListeners('minimize-window');
     ipcMain.removeAllListeners('toggle-maximize-window');
     ipcMain.removeAllListeners('set-always-on-top');

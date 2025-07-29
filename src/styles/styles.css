@@ -10,11 +10,13 @@
     height: 120vh;
     /* 使用vh单位，高度为120%视口高度 */
     /* 设置容器高度为120vh，确保模型完整显示 */
-    z-index: 20;
+    z-index: 25;
+    /* 提高z-index确保在其他元素之上，支持拖拽功能 */
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    pointer-events: none;
+    pointer-events: auto;
+    /* 启用鼠标事件以支持拖拽功能 */
     border: none;
     overflow: visible;
     /* 允许内容在容器外显示 */
@@ -28,6 +30,8 @@
     display: block;
     /* 确保canvas不会被裁剪 */
     overflow: visible;
+    /* 确保canvas也能接收鼠标事件 */
+    pointer-events: auto;
     /* 移除任何可能的变换限制 */
     transform: none;
 }
@@ -389,11 +393,11 @@ body {
     height: 0 !important;
 }
 
-/* 拖拽区域样式 */
+/* 拖拽区域样式 - 只覆盖右侧区域，避免与3D模型拖拽冲突 */
 .drag-handle {
     position: absolute;
     top: 0;
-    left: 0;
+    left: 50%;
     right: 0;
     height: 30px;
     -webkit-app-region: drag;

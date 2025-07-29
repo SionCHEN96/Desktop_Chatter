@@ -119,4 +119,25 @@ export class WindowService {
     }
   }
 
+  /**
+   * 移动窗口位置
+   * @param {number} deltaX - X轴移动距离
+   * @param {number} deltaY - Y轴移动距离
+   */
+  moveWindow(deltaX, deltaY) {
+    console.log('[WindowService] 移动窗口', { deltaX, deltaY });
+    if (this.mainWindow) {
+      const [currentX, currentY] = this.mainWindow.getPosition();
+      const newX = currentX + deltaX;
+      const newY = currentY + deltaY;
+      console.log('[WindowService] 窗口位置变化', {
+        from: [currentX, currentY],
+        to: [newX, newY]
+      });
+      this.mainWindow.setPosition(newX, newY);
+    } else {
+      console.error('[WindowService] mainWindow 不存在');
+    }
+  }
+
 }
