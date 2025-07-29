@@ -8,7 +8,9 @@ export class MessageManager {
     this.container = containerElement;
     this.messages = [];
     this.maxMessages = 100; // 最大消息数量
-    
+    this.currentAIMessage = null; // 当前显示的AI消息元素
+    this.aiMessageTimeout = null; // AI消息自动消失定时器
+
     this.initContainer();
   }
 
@@ -21,12 +23,12 @@ export class MessageManager {
       console.error('[MessageManager] Container element not found');
       return;
     }
-    
+
     this.container.classList.add('message-container');
   }
 
   /**
-   * 添加用户消息
+   * 添加用户消息（不显示，仅记录）
    * @param {string} text - 消息内容
    * @param {Object} options - 选项
    */
@@ -38,13 +40,20 @@ export class MessageManager {
       timestamp: new Date(),
       ...options
     };
-    
-    this.addMessage(message);
+
+    // 仅记录到消息列表，不显示UI
+    this.messages.push(message);
+
+    // 限制消息数量
+    if (this.messages.length > this.maxMessages) {
+      this.messages.shift();
+    }
+
     return message;
   }
 
   /**
-   * 添加AI消息
+   * 添加AI消息（替换当前显示的AI消息）
    * @param {string} text - 消息内容
    * @param {Object} options - 选项
    */
@@ -56,8 +65,29 @@ export class MessageManager {
       timestamp: new Date(),
       ...options
     };
-    
-    this.addMessage(message);
+
+    // 清除之前的AI消息显示和定时器
+    this.clearCurrentAIMessage();
+
+    // 记录到消息列表
+    this.messages.push(message);
+
+    // 限制消息数量
+    if (this.messages.length > this.maxMessages) {
+      const removedMessage = this.messages.shift();
+      if (removedMessage.type !== 'ai') {
+        this.removeMessageElement(removedMessage.id);
+      }
+    }
+
+    // 显示新的AI消息
+    this.renderAIMessage(message);
+
+    // 设置10秒后自动消失
+    this.aiMessageTimeout = setTimeout(() => {
+      this.clearCurrentAIMessage();
+    }, 10000);
+
     return message;
   }
 
@@ -74,7 +104,7 @@ export class MessageManager {
       timestamp: new Date(),
       ...options
     };
-    
+
     this.addMessage(message);
     return message;
   }
@@ -86,13 +116,13 @@ export class MessageManager {
    */
   addMessage(message) {
     this.messages.push(message);
-    
+
     // 限制消息数量
     if (this.messages.length > this.maxMessages) {
       const removedMessage = this.messages.shift();
       this.removeMessageElement(removedMessage.id);
     }
-    
+
     this.renderMessage(message);
     this.scrollToBottom();
   }
@@ -117,20 +147,20 @@ export class MessageManager {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${message.type}-message`);
     messageElement.setAttribute('data-message-id', message.id);
-    
+
     // 创建消息内容
     const contentElement = document.createElement('div');
     contentElement.classList.add('message-content');
     contentElement.textContent = message.text;
-    
+
     // 创建时间戳
     const timestampElement = document.createElement('div');
     timestampElement.classList.add('message-timestamp');
     timestampElement.textContent = this.formatTimestamp(message.timestamp);
-    
+
     messageElement.appendChild(contentElement);
     messageElement.appendChild(timestampElement);
-    
+
     return messageElement;
   }
 
@@ -163,12 +193,58 @@ export class MessageManager {
   }
 
   /**
+   * 清除当前显示的AI消息
+   * @private
+   */
+  clearCurrentAIMessage() {
+    // 清除定时器
+    if (this.aiMessageTimeout) {
+      clearTimeout(this.aiMessageTimeout);
+      this.aiMessageTimeout = null;
+    }
+
+    // 移除当前AI消息元素
+    if (this.currentAIMessage) {
+      // 添加淡出动画
+      this.currentAIMessage.style.animation = 'fadeOut 0.3s ease-out forwards';
+
+      setTimeout(() => {
+        if (this.currentAIMessage && this.currentAIMessage.parentNode) {
+          this.currentAIMessage.parentNode.removeChild(this.currentAIMessage);
+        }
+        this.currentAIMessage = null;
+      }, 300);
+    }
+  }
+
+  /**
+   * 渲染AI消息
+   * @private
+   * @param {Object} message - 消息对象
+   */
+  renderAIMessage(message) {
+    const messageElement = this.createMessageElement(message);
+    messageElement.classList.add('ai-message-bubble');
+
+    // 设置为当前AI消息
+    this.currentAIMessage = messageElement;
+
+    // 添加到容器
+    this.container.appendChild(messageElement);
+
+    // 添加淡入动画
+    messageElement.style.animation = 'fadeIn 0.5s ease-out forwards';
+  }
+
+
+
+  /**
    * 生成消息ID
    * @private
    * @returns {string} 消息ID
    */
   generateMessageId() {
-    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   /**

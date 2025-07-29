@@ -28,7 +28,7 @@ export class WindowService {
    */
   createMainWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-    
+
     this.mainWindow = new BrowserWindow({
       width: WINDOW_CONFIG.width,
       height: WINDOW_CONFIG.height,
@@ -118,4 +118,5 @@ export class WindowService {
       }
     }
   }
+
 }
