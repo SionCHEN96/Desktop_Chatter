@@ -11,9 +11,18 @@
  * @property {string} left - 左侧距离
  */
 export const CONTAINER_STYLES = {
-  position: 'absolute',
-  bottom: '200px',
-  left: '0'
+  position: 'fixed',
+  bottom: '-5vh',
+  left: '0',
+  width: '50vw',
+  height: '120vh',
+  zIndex: '20',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-end',
+  pointerEvents: 'none',
+  border: 'none',
+  overflow: 'visible'
 };
 
 /**
@@ -25,8 +34,8 @@ export const CONTAINER_STYLES = {
  * @property {boolean} frame - 是否显示边框
  */
 export const WINDOW_CONFIG = {
-  width: 350,
-  height: 600,
+  width: 800,
+  height: 450,
   transparent: true,
   frame: false
 };

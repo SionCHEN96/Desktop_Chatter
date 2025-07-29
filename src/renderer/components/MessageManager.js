@@ -199,15 +199,15 @@ export class MessageManager {
 
     // 移除当前AI消息元素
     if (this.currentAIMessage) {
-      // 添加淡出动画
-      this.currentAIMessage.style.animation = 'fadeOut 0.3s ease-out forwards';
+      // 添加消失动画
+      this.currentAIMessage.classList.add('disappearing');
 
       setTimeout(() => {
         if (this.currentAIMessage && this.currentAIMessage.parentNode) {
           this.currentAIMessage.parentNode.removeChild(this.currentAIMessage);
         }
         this.currentAIMessage = null;
-      }, 300);
+      }, 400); // 与bubbleDisappear动画时长一致
     }
   }
 
@@ -226,8 +226,7 @@ export class MessageManager {
     // 添加到容器
     this.container.appendChild(messageElement);
 
-    // 添加淡入动画
-    messageElement.style.animation = 'fadeIn 0.5s ease-out forwards';
+    // 动画通过CSS类自动触发，无需手动设置
   }
 
 
