@@ -267,7 +267,12 @@ let currentY = 0;
 let targetX = 0;
 let targetY = 0;
 let animationId = null;
-const SMOOTHING_FACTOR = 0.15; // 平滑系数，值越小越平滑
+let lastMouseTime = 0;
+let mouseVelocityX = 0;
+let mouseVelocityY = 0;
+const BASE_SMOOTHING = 0.15; // 基础平滑系数
+const MAX_SMOOTHING = 0.8;   // 最大平滑系数（快速移动时）
+const VELOCITY_THRESHOLD = 50; // 速度阈值，超过此值认为是快速移动
 
 // 初始化3D模型拖拽功能
 function initModelDrag() {
@@ -308,6 +313,9 @@ function initModelDrag() {
     currentY = 0;
     targetX = 0;
     targetY = 0;
+    lastMouseTime = Date.now();
+    mouseVelocityX = 0;
+    mouseVelocityY = 0;
 
     console.log('[拖拽功能] 开始拖拽', { dragStartX, dragStartY });
 
@@ -321,13 +329,24 @@ function initModelDrag() {
     event.preventDefault();
   });
 
-  // 鼠标移动事件 - 更新目标位置
+  // 鼠标移动事件 - 更新目标位置并计算速度
   document.addEventListener('mousemove', (event) => {
     if (!isDragging) return;
 
     // 计算移动距离
     const deltaX = event.clientX - dragStartX;
     const deltaY = event.clientY - dragStartY;
+
+    // 计算鼠标移动速度
+    const currentTime = Date.now();
+    const timeDelta = currentTime - lastMouseTime;
+
+    if (timeDelta > 0) {
+      mouseVelocityX = Math.abs(deltaX) / timeDelta * 1000; // 像素/秒
+      mouseVelocityY = Math.abs(deltaY) / timeDelta * 1000;
+    }
+
+    lastMouseTime = currentTime;
 
     // 更新目标位置
     targetX += deltaX;
@@ -370,19 +389,52 @@ function startSmoothAnimation() {
     // 计算当前位置到目标位置的差值
     const deltaX = targetX - currentX;
     const deltaY = targetY - currentY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    // 如果差值足够小，直接跳到目标位置
-    if (Math.abs(deltaX) < 0.1 && Math.abs(deltaY) < 0.1) {
+    // 根据鼠标速度和距离动态调整平滑系数
+    const maxVelocity = Math.max(mouseVelocityX, mouseVelocityY);
+    let smoothingFactor = BASE_SMOOTHING;
+
+    // 如果鼠标移动很快或距离很远，增加平滑系数
+    if (maxVelocity > VELOCITY_THRESHOLD || distance > 50) {
+      const velocityFactor = Math.min(maxVelocity / VELOCITY_THRESHOLD, 5); // 最多5倍速度
+      const distanceFactor = Math.min(distance / 50, 3); // 最多3倍距离
+      smoothingFactor = Math.min(BASE_SMOOTHING * Math.max(velocityFactor, distanceFactor), MAX_SMOOTHING);
+    }
+
+    // 如果距离很远，直接跳跃一部分距离
+    if (distance > 100) {
+      // 对于很远的距离，直接移动一半距离
+      const jumpX = deltaX * 0.5;
+      const jumpY = deltaY * 0.5;
+
+      console.log('[拖拽功能] 快速跳跃', {
+        distance: Math.round(distance),
+        jumpX: Math.round(jumpX),
+        jumpY: Math.round(jumpY)
+      });
+
+      if (window.electronAPI && window.electronAPI.moveWindow) {
+        window.electronAPI.moveWindow(Math.round(jumpX), Math.round(jumpY));
+      }
+
+      currentX += jumpX;
+      currentY += jumpY;
+    } else if (Math.abs(deltaX) < 0.1 && Math.abs(deltaY) < 0.1) {
+      // 如果差值足够小，直接跳到目标位置
       currentX = targetX;
       currentY = targetY;
     } else {
-      // 使用线性插值平滑移动
-      const moveX = deltaX * SMOOTHING_FACTOR;
-      const moveY = deltaY * SMOOTHING_FACTOR;
+      // 使用动态平滑系数进行插值移动
+      const moveX = deltaX * smoothingFactor;
+      const moveY = deltaY * smoothingFactor;
 
       // 只有移动距离足够大时才发送IPC
       if (Math.abs(moveX) > 0.5 || Math.abs(moveY) > 0.5) {
         console.log('[拖拽功能] 平滑移动', {
+          smoothingFactor: smoothingFactor.toFixed(2),
+          velocity: Math.round(maxVelocity),
+          distance: Math.round(distance),
           moveX: Math.round(moveX),
           moveY: Math.round(moveY)
         });
