@@ -66,12 +66,9 @@ app.whenReady().then(async () => {
 /**
  * 应用退出处理
  */
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   if (process.platform !== 'darwin') {
-    // 清理IPC监听器
-    if (ipcService) {
-      ipcService.removeAllListeners();
-    }
+    await cleanupServices();
     app.quit();
   }
 });
@@ -79,9 +76,28 @@ app.on('window-all-closed', () => {
 /**
  * 应用退出前清理
  */
-app.on('before-quit', () => {
+app.on('before-quit', async () => {
   console.log('[Main] Application is quitting, cleaning up...');
-  if (ipcService) {
-    ipcService.removeAllListeners();
-  }
+  await cleanupServices();
 });
+
+/**
+ * 清理所有服务
+ */
+async function cleanupServices() {
+  try {
+    // 清理IPC监听器
+    if (ipcService) {
+      ipcService.removeAllListeners();
+    }
+
+    // 停止内存服务（包括ChromaDB）
+    if (memoryService) {
+      await memoryService.stopService();
+    }
+
+    console.log('[Main] Services cleanup completed');
+  } catch (error) {
+    console.error('[Main] Error during services cleanup:', error);
+  }
+}

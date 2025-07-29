@@ -7,3 +7,4 @@ export { AIService } from './aiService.js';
 export { WindowService } from './windowService.js';
 export { IPCService } from './ipcService.js';
 export { MemoryService } from './memoryService.js';
+export { ChromaService } from './chromaService.js';
