@@ -12,7 +12,7 @@ const BASE_SYSTEM_PROMPT = `You are a  good friend and life assistant. Your pers
   - Language: Respond in Chinese, and maintain consistency throughout the conversation`;
 
 // 添加一个函数来构建包含记忆的系统提示
-export async function buildSystemPromptWithMemory(userMessage, memoryManager) {
+export async function buildSystemPromptWithMemory(memoryManager, userMessage) {
   let basePrompt = BASE_SYSTEM_PROMPT;
 
   try {
@@ -63,6 +63,11 @@ export const CONTAINER_STYLES = {
 };
 
 // 简单的URL验证函数
+/**
+ * 验证URL格式
+ * @param {string} url - 要验证的URL
+ * @returns {boolean} - URL是否有效
+ */
 export function validateUrl(url) {
   try {
     new URL(url);
