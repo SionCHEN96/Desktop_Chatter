@@ -262,7 +262,12 @@ export function playSimpleAnimation() {
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
-let pendingMove = null;
+let currentX = 0;
+let currentY = 0;
+let targetX = 0;
+let targetY = 0;
+let animationId = null;
+const SMOOTHING_FACTOR = 0.15; // 平滑系数，值越小越平滑
 
 // 初始化3D模型拖拽功能
 function initModelDrag() {
@@ -299,17 +304,24 @@ function initModelDrag() {
     isDragging = true;
     dragStartX = event.clientX;
     dragStartY = event.clientY;
+    currentX = 0;
+    currentY = 0;
+    targetX = 0;
+    targetY = 0;
 
     console.log('[拖拽功能] 开始拖拽', { dragStartX, dragStartY });
 
     // 改变鼠标样式
     characterContainer.style.cursor = 'grabbing';
 
+    // 启动平滑动画
+    startSmoothAnimation();
+
     // 阻止默认行为
     event.preventDefault();
   });
 
-  // 鼠标移动事件 - 使用requestAnimationFrame确保平滑移动
+  // 鼠标移动事件 - 更新目标位置
   document.addEventListener('mousemove', (event) => {
     if (!isDragging) return;
 
@@ -317,29 +329,9 @@ function initModelDrag() {
     const deltaX = event.clientX - dragStartX;
     const deltaY = event.clientY - dragStartY;
 
-    // 只有移动距离足够大时才处理，避免微小抖动
-    if (Math.abs(deltaX) < 2 && Math.abs(deltaY) < 2) {
-      return;
-    }
-
-    // 取消之前的pending move
-    if (pendingMove) {
-      cancelAnimationFrame(pendingMove);
-    }
-
-    // 使用requestAnimationFrame确保平滑移动
-    pendingMove = requestAnimationFrame(() => {
-      console.log('[拖拽功能] 鼠标移动', { deltaX, deltaY });
-
-      // 通过IPC发送窗口移动请求
-      if (window.electronAPI && window.electronAPI.moveWindow) {
-        window.electronAPI.moveWindow(deltaX, deltaY);
-      } else {
-        console.error('[拖拽功能] electronAPI.moveWindow 不可用');
-      }
-
-      pendingMove = null;
-    });
+    // 更新目标位置
+    targetX += deltaX;
+    targetY += deltaY;
 
     // 更新起始位置
     dragStartX = event.clientX;
@@ -353,15 +345,72 @@ function initModelDrag() {
       isDragging = false;
       characterContainer.style.cursor = 'grab';
 
-      // 清理pending move
-      if (pendingMove) {
-        cancelAnimationFrame(pendingMove);
-        pendingMove = null;
-      }
+      // 停止平滑动画
+      stopSmoothAnimation();
     }
   });
 
   // 设置初始鼠标样式
   characterContainer.style.cursor = 'grab';
   console.log('[拖拽功能] 拖拽功能初始化完成');
+}
+
+// 启动平滑动画
+function startSmoothAnimation() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+  }
+
+  function animate() {
+    if (!isDragging) {
+      stopSmoothAnimation();
+      return;
+    }
+
+    // 计算当前位置到目标位置的差值
+    const deltaX = targetX - currentX;
+    const deltaY = targetY - currentY;
+
+    // 如果差值足够小，直接跳到目标位置
+    if (Math.abs(deltaX) < 0.1 && Math.abs(deltaY) < 0.1) {
+      currentX = targetX;
+      currentY = targetY;
+    } else {
+      // 使用线性插值平滑移动
+      const moveX = deltaX * SMOOTHING_FACTOR;
+      const moveY = deltaY * SMOOTHING_FACTOR;
+
+      // 只有移动距离足够大时才发送IPC
+      if (Math.abs(moveX) > 0.5 || Math.abs(moveY) > 0.5) {
+        console.log('[拖拽功能] 平滑移动', {
+          moveX: Math.round(moveX),
+          moveY: Math.round(moveY)
+        });
+
+        // 发送移动请求
+        if (window.electronAPI && window.electronAPI.moveWindow) {
+          window.electronAPI.moveWindow(Math.round(moveX), Math.round(moveY));
+        } else {
+          console.error('[拖拽功能] electronAPI.moveWindow 不可用');
+        }
+
+        // 更新当前位置
+        currentX += moveX;
+        currentY += moveY;
+      }
+    }
+
+    // 继续动画
+    animationId = requestAnimationFrame(animate);
+  }
+
+  animate();
+}
+
+// 停止平滑动画
+function stopSmoothAnimation() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
 }
