@@ -1,5 +1,6 @@
 import { MemoryManager } from '../MemoryManager.js';
 import { ChromaClient } from 'chromadb';
+import { DefaultEmbeddingFunction } from '@chroma-core/default-embed';
 
 /**
  * ChromaDB内存管理策略

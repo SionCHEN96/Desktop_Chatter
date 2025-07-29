@@ -37,6 +37,8 @@ export class QdrantStrategy extends MemoryManager {
       
       // 检查集合是否存在，如果不存在则创建
       let collectionExists = false;
+      
+      // 获取所有集合并检查是否存在ai_memory
       for (const collection of collections.collections) {
         if (collection.name === 'ai_memory') {
           collectionExists = true;
@@ -50,19 +52,7 @@ export class QdrantStrategy extends MemoryManager {
         });
       }
       
-      // 创建payload索引以支持排序和过滤
-      try {
-        await this.client.createPayloadIndex('ai_memory', {
-          field_name: 'timestamp',
-          field_schema: 'keyword' // 使用keyword类型以支持精确匹配
-        });
-      } catch (indexError) {
-        // 索引可能已存在，这是正常的
-        console.log('[QdrantStrategy] Payload index may already exist or creation not needed');
-      }
-      
       this.initialized = true;
-      this.retryCount = 0; // 重置重试计数
       console.log('[QdrantStrategy] Qdrant initialized successfully');
     } catch (error) {
       console.error('[QdrantStrategy] Error during initialization:', error);
