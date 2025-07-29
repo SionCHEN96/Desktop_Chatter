@@ -1,16 +1,22 @@
 import { MemoryManager } from '../MemoryManager.js';
 import { ChromaClient } from 'chromadb';
+import { createLogger } from '../../../utils/index.js';
+
+const logger = createLogger('ChromaDBStrategy');
 
 /**
  * ChromaDB内存管理策略
- * 使用ChromaDB向量数据库进行记忆存储和检索
+ * 使用ChromaDB向量数据库进行记忆存储和检索，支持持久化存储
  */
 export class ChromaDBStrategy extends MemoryManager {
-  constructor() {
+  constructor(connectionConfig = null) {
     super();
     this.client = null;
     this.collection = null;
     this.initialized = false;
+    this.connectionConfig = connectionConfig || {
+      baseUrl: "http://localhost:8000"
+    };
   }
 
   /**
@@ -19,41 +25,44 @@ export class ChromaDBStrategy extends MemoryManager {
    */
   async initialize() {
     try {
-      // 首先尝试连接到本地运行的ChromaDB服务
-      this.client = new ChromaClient({
-        baseUrl: "http://localhost:8000"
-      });
+      logger.info('Initializing ChromaDB client', this.connectionConfig);
+
+      // 连接到ChromaDB服务
+      this.client = new ChromaClient(this.connectionConfig);
 
       // 测试连接
       await this.client.heartbeat();
+      logger.info('ChromaDB connection established successfully');
 
-      // 创建或获取集合
+      // 创建或获取集合，使用持久化存储和自定义嵌入函数
       this.collection = await this.client.getOrCreateCollection({
-        name: "ai_memory"
+        name: "ai_companion_memory",
+        metadata: {
+          description: "AI Companion persistent memory storage",
+          created_at: new Date().toISOString()
+        },
+        embeddingFunction: {
+          generate: async (texts) => {
+            // 简单的文本向量化：使用字符编码作为向量
+            return texts.map(text => {
+              const vector = new Array(384).fill(0); // 384维向量
+              for (let i = 0; i < Math.min(text.length, 384); i++) {
+                vector[i] = text.charCodeAt(i) / 255; // 归一化到0-1
+              }
+              return vector;
+            });
+          }
+        }
       });
 
       this.initialized = true;
-      console.log('[ChromaDBStrategy] ChromaDB initialized successfully with local server');
+      logger.info('ChromaDB strategy initialized successfully', {
+        collectionName: "ai_companion_memory",
+        persistent: true
+      });
     } catch (error) {
-      console.warn('[ChromaDBStrategy] Failed to connect to local ChromaDB server:', error);
-
-      try {
-        // 如果无法连接到本地服务，则尝试使用内存模式
-        console.log('[ChromaDBStrategy] Falling back to in-memory mode');
-        this.client = new ChromaClient();
-
-        // 创建或获取集合
-        this.collection = await this.client.getOrCreateCollection({
-          name: "ai_memory"
-        });
-
-        this.initialized = true;
-        console.log('[ChromaDBStrategy] ChromaDB initialized successfully in memory mode');
-      } catch (fallbackError) {
-        console.error('[ChromaDBStrategy] Failed to initialize ChromaDB:', fallbackError);
-        console.log('[ChromaDBStrategy] Using fallback storage method');
-        this.initialized = true; // 仍然标记为已初始化，使用降级存储
-      }
+      logger.error('Failed to initialize ChromaDB strategy', error);
+      throw error;
     }
   }
 
@@ -64,51 +73,36 @@ export class ChromaDBStrategy extends MemoryManager {
    * @returns {Promise<void>}
    */
   async saveMemory(content, metadata = {}) {
-    if (!this.initialized) {
-      console.warn('[ChromaDBStrategy] MemoryManager not initialized');
-      return;
+    if (!this.initialized || !this.collection) {
+      throw new Error('ChromaDB strategy not initialized');
     }
 
     try {
-      if (!this.collection) {
-        // 使用降级存储
-        const memory = {
-          id: Date.now().toString(),
-          content: content,
-          metadata: metadata,
-          timestamp: new Date().toISOString()
-        };
+      const id = `memory_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const timestamp = new Date().toISOString();
 
-        this.fallbackStorage.push(memory);
-
-        // 保持存储大小在合理范围内
-        if (this.fallbackStorage.length > 100) {
-          this.fallbackStorage = this.fallbackStorage.slice(-100);
-        }
-
-        console.log('[ChromaDBStrategy] Memory saved to fallback storage:', memory);
-        return;
-      }
-
-      // 保存记忆到 ChromaDB
-      const ids = [Date.now().toString()];
-      const embeddings = [this.generateSimpleVector(content)];
-      const metadatas = [{
+      // 准备文档数据
+      const document = content;
+      const metadataWithTimestamp = {
         ...metadata,
-        timestamp: new Date().toISOString()
-      }];
-      const documents = [content];
+        timestamp,
+        role: metadata.role || 'unknown'
+      };
 
+      // 保存到ChromaDB
       await this.collection.add({
-        ids,
-        embeddings,
-        metadatas,
-        documents
+        ids: [id],
+        documents: [document],
+        metadatas: [metadataWithTimestamp]
       });
 
-      console.log('[ChromaDBStrategy] Memory saved:', { ids, documents, metadatas });
+      logger.info('Memory saved successfully', {
+        id,
+        contentLength: content.length,
+        metadata: metadataWithTimestamp
+      });
     } catch (error) {
-      console.error('[ChromaDBStrategy] Failed to save memory:', error);
+      logger.error('Failed to save memory to ChromaDB', error);
       throw error;
     }
   }
@@ -120,44 +114,38 @@ export class ChromaDBStrategy extends MemoryManager {
    * @returns {Promise<Array>}
    */
   async searchMemory(query, limit = 5) {
-    if (!this.initialized) {
-      console.warn('[ChromaDBStrategy] MemoryManager not initialized');
-      return [];
+    if (!this.initialized || !this.collection) {
+      throw new Error('ChromaDB strategy not initialized');
     }
 
     try {
-      if (!this.collection) {
-        // 从降级存储中搜索
-        console.log('[ChromaDBStrategy] Memory search results from fallback storage:', this.fallbackStorage);
-        return this.fallbackStorage.slice(0, limit);
-      }
-
-      // 在 ChromaDB 中搜索
-      const queryEmbedding = this.generateSimpleVector(query);
-      const result = await this.collection.query({
-        queryEmbeddings: queryEmbedding,
+      // 使用ChromaDB的查询功能
+      const results = await this.collection.query({
+        queryTexts: [query],
         nResults: limit
       });
 
-      console.log('[ChromaDBStrategy] Memory search results:', result);
-
-      // 格式化结果以匹配预期格式
-      const formattedResults = [];
-      if (result.ids && result.ids.length > 0) {
-        for (let i = 0; i < result.ids[0].length; i++) {
-          formattedResults.push({
-            id: result.ids[0][i],
-            payload: {
-              content: result.documents[0][i],
-              metadata: result.metadatas[0][i]
-            }
+      // 转换结果格式
+      const memories = [];
+      if (results.ids && results.ids[0]) {
+        for (let i = 0; i < results.ids[0].length; i++) {
+          memories.push({
+            id: results.ids[0][i],
+            content: results.documents[0][i],
+            metadata: results.metadatas[0][i],
+            distance: results.distances[0][i]
           });
         }
       }
 
-      return formattedResults;
+      logger.info('Memory search completed', {
+        query: query.substring(0, 50),
+        resultsCount: memories.length
+      });
+
+      return memories;
     } catch (error) {
-      console.error('[ChromaDBStrategy] Failed to search memory:', error);
+      logger.error('Failed to search memory in ChromaDB', error);
       throw error;
     }
   }
@@ -168,87 +156,97 @@ export class ChromaDBStrategy extends MemoryManager {
    * @returns {Promise<Array>}
    */
   async getRecentMemories(limit = 10) {
-    if (!this.initialized) {
-      console.warn('[ChromaDBStrategy] MemoryManager not initialized');
-      return [];
+    if (!this.initialized || !this.collection) {
+      throw new Error('ChromaDB strategy not initialized');
     }
 
     try {
-      if (!this.collection) {
-        // 从降级存储中获取最近的记忆
-        const recent = [...this.fallbackStorage].reverse().slice(0, limit);
-        console.log('[ChromaDBStrategy] Recent memories from fallback storage:', recent);
-        return recent;
-      }
-
-      // 在 ChromaDB 中获取所有记忆并排序
+      // 获取所有记忆
       const result = await this.collection.get({
         limit: limit
       });
 
-      console.log('[ChromaDBStrategy] Recent memories:', result);
-
-      // 格式化结果以匹配预期格式
-      const formattedResults = [];
+      // 转换结果格式并按时间戳排序
+      const memories = [];
       if (result.ids) {
         for (let i = 0; i < result.ids.length; i++) {
-          formattedResults.push({
+          memories.push({
             id: result.ids[i],
-            payload: {
-              content: result.documents[i],
-              metadata: result.metadatas[i]
-            }
+            content: result.documents[i],
+            metadata: result.metadatas[i]
           });
         }
       }
 
-      return formattedResults;
+      // 按时间戳降序排序（最新的在前）
+      memories.sort((a, b) => {
+        const timeA = new Date(a.metadata?.timestamp || 0);
+        const timeB = new Date(b.metadata?.timestamp || 0);
+        return timeB - timeA;
+      });
+
+      logger.info('Recent memories retrieved', {
+        count: memories.length,
+        limit
+      });
+
+      return memories.slice(0, limit);
     } catch (error) {
-      console.error('[ChromaDBStrategy] Failed to get recent memories:', error);
+      logger.error('Failed to get recent memories from ChromaDB', error);
       throw error;
     }
   }
 
   /**
-   * 获取所有记忆
-   * @returns {Promise<Array>}
+   * 清除所有记忆
+   * @returns {Promise<void>}
    */
-  async getAllMemories() {
-    if (!this.initialized) {
-      console.warn('[ChromaDBStrategy] MemoryManager not initialized');
-      return [];
+  async clearAllMemories() {
+    if (!this.initialized || !this.collection) {
+      throw new Error('ChromaDB strategy not initialized');
     }
 
     try {
-      if (!this.collection) {
-        // 从降级存储中获取所有记忆
-        console.log('[ChromaDBStrategy] All memories from fallback storage:', this.fallbackStorage);
-        return this.fallbackStorage;
-      }
+      // 删除集合中的所有数据
+      await this.collection.delete();
 
-      // 获取所有记忆
-      const result = await this.collection.get();
-
-      console.log('[ChromaDBStrategy] All memories:', result);
-
-      // 格式化结果以匹配预期格式
-      const formattedResults = [];
-      if (result.ids) {
-        for (let i = 0; i < result.ids.length; i++) {
-          formattedResults.push({
-            id: result.ids[i],
-            payload: {
-              content: result.documents[i],
-              metadata: result.metadatas[i]
-            }
-          });
-        }
-      }
-
-      return formattedResults;
+      logger.info('All memories cleared from ChromaDB');
     } catch (error) {
-      console.error('[ChromaDBStrategy] Failed to get all memories:', error);
+      logger.error('Failed to clear memories from ChromaDB', error);
       throw error;
+    }
+  }
+
+  /**
+   * 获取存储统计信息
+   * @returns {Promise<Object>} 统计信息
+   */
+  async getStats() {
+    if (!this.initialized || !this.collection) {
+      return {
+        initialized: false,
+        storageType: 'chromadb',
+        totalMemories: 0
+      };
+    }
+
+    try {
+      const result = await this.collection.count();
+
+      return {
+        initialized: true,
+        storageType: 'chromadb',
+        totalMemories: result,
+        collectionName: 'ai_companion_memory'
+      };
+    } catch (error) {
+      logger.error('Failed to get ChromaDB stats', error);
+      return {
+        initialized: true,
+        storageType: 'chromadb',
+        totalMemories: 'unknown',
+        error: error.message
+      };
     }
   }
 }

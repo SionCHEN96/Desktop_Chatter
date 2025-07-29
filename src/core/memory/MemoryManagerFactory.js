@@ -1,4 +1,3 @@
-import { QdrantStrategy } from './strategies/QdrantStrategy.js';
 import { ChromaDBStrategy } from './strategies/ChromaDBStrategy.js';
 import { MemoryStrategy } from './strategies/MemoryStrategy.js';
 
@@ -9,29 +8,17 @@ import { MemoryStrategy } from './strategies/MemoryStrategy.js';
 export class MemoryManagerFactory {
   /**
    * 创建内存管理器实例
-   * @param {string} strategy - 要使用的策略 ('qdrant', 'chromadb', 'fallback')
+   * @param {string} strategy - 要使用的策略 ('chromadb', 'memory', 'fallback')
+   * @param {Object} connectionConfig - 连接配置
    * @returns {Promise<MemoryManager>}
    */
-  static async createMemoryManager(strategy = 'qdrant') {
+  static async createMemoryManager(strategy = 'chromadb', connectionConfig = null) {
     let memoryManager;
 
     switch (strategy.toLowerCase()) {
-      case 'qdrant':
-        try {
-          memoryManager = new QdrantStrategy();
-          await memoryManager.initialize();
-          console.log('[MemoryManagerFactory] Using Qdrant strategy');
-          return memoryManager;
-        } catch (error) {
-          console.error('[MemoryManagerFactory] Failed to initialize Qdrant strategy:', error);
-          console.log('[MemoryManagerFactory] Falling back to ChromaDB strategy');
-          // 降级到ChromaDB
-          return await this.createMemoryManager('chromadb');
-        }
-
       case 'chromadb':
         try {
-          memoryManager = new ChromaDBStrategy();
+          memoryManager = new ChromaDBStrategy(connectionConfig);
           await memoryManager.initialize();
           console.log('[MemoryManagerFactory] Using ChromaDB strategy');
           return memoryManager;
@@ -39,7 +26,7 @@ export class MemoryManagerFactory {
           console.error('[MemoryManagerFactory] Failed to initialize ChromaDB strategy:', error);
           console.log('[MemoryManagerFactory] Falling back to in-memory strategy');
           // 降级到内存存储
-          return await this.createMemoryManager('fallback');
+          return await this.createMemoryManager('memory');
         }
 
       case 'fallback':

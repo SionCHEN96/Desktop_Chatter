@@ -6,14 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "electron .",
-    "start-with-db": "concurrently \"npm run start-qdrant-full\" \"wait-on http://localhost:6333 && electron .\"",
-    "start-with-db-node": "concurrently \"node start-qdrant-node.cjs\" \"wait-on http://localhost:6333 && electron .\"",
-    "start-qdrant": "npm run start-qdrant-full",
-    "start-qdrant-full": "start-qdrant-full.bat",
-    "stop-qdrant": "stop-qdrant.bat",
-    "start-app-with-db": "start-app-with-db.bat",
-    "start-app-with-db-debug": "start-app-with-db-debug.bat",
-    "build": "electron-builder"
+    "setup-chromadb": "node scripts/setup-chromadb.js",
+    "start-with-chromadb": "npm run setup-chromadb && electron .",
+    "build": "electron-builder",
+    "dev": "electron . --inspect=9229"
   },
   "keywords": [
     "ai",

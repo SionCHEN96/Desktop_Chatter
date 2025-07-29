@@ -1,52 +1,62 @@
 /**
  * 内存管理服务
- * 负责初始化和管理内存管理器
+ * 负责初始化和管理内存管理器，集成ChromaDB服务
  */
 
 import { MemoryManagerFactory } from '../../core/memory/index.js';
+import { ChromaService } from './chromaService.js';
+import { createLogger } from '../../utils/index.js';
+
+const logger = createLogger('MemoryService');
 
 /**
  * 内存服务类
- * 封装内存管理相关的所有操作
+ * 封装内存管理相关的所有操作，集成ChromaDB自动启动
  */
 export class MemoryService {
   constructor() {
     this.memoryManager = null;
+    this.chromaService = new ChromaService();
   }
 
   /**
    * 初始化内存管理器
-   * 按优先级尝试不同的存储策略
+   * 自动启动ChromaDB服务并初始化内存管理器
    * @returns {Promise<Object|null>} 内存管理器实例
    */
   async initializeMemoryManager() {
     try {
-      // 首先尝试使用Qdrant
-      this.memoryManager = await MemoryManagerFactory.createMemoryManager('qdrant');
-      console.log('[MemoryService] Successfully initialized with Qdrant strategy');
-      return this.memoryManager;
-    } catch (error) {
-      console.error('[MemoryService] Failed to initialize with Qdrant strategy:', error.message);
-      
-      try {
-        // 尝试使用ChromaDB作为备选
-        this.memoryManager = await MemoryManagerFactory.createMemoryManager('chromadb');
-        console.log('[MemoryService] Successfully initialized with ChromaDB strategy');
+      logger.info('Starting memory service initialization...');
+
+      // 首先尝试启动ChromaDB服务
+      const chromaStarted = await this.chromaService.startChromaDB();
+
+      if (chromaStarted) {
+        // ChromaDB启动成功，使用ChromaDB策略
+        const connectionConfig = this.chromaService.getConnectionConfig();
+        this.memoryManager = await MemoryManagerFactory.createMemoryManager('chromadb', connectionConfig);
+        logger.info('Successfully initialized with ChromaDB strategy');
         return this.memoryManager;
-      } catch (chromaError) {
-        console.error('[MemoryService] Failed to initialize with ChromaDB strategy:', chromaError.message);
-        
-        try {
-          // 最后尝试使用内存存储
-          this.memoryManager = await MemoryManagerFactory.createMemoryManager('memory');
-          console.log('[MemoryService] Successfully initialized with in-memory strategy');
-          return this.memoryManager;
-        } catch (memoryError) {
-          console.error('[MemoryService] Failed to initialize with in-memory strategy:', memoryError.message);
-          console.error('[MemoryService] All memory strategies failed to initialize');
-          this.memoryManager = null;
-          return null;
-        }
+      } else {
+        // ChromaDB启动失败，降级到内存存储
+        logger.warn('ChromaDB failed to start, falling back to in-memory storage');
+        this.memoryManager = await MemoryManagerFactory.createMemoryManager('memory');
+        logger.info('Successfully initialized with in-memory strategy');
+        return this.memoryManager;
+      }
+    } catch (error) {
+      logger.error('Failed to initialize memory manager', error);
+
+      try {
+        // 最后的降级方案
+        logger.info('Attempting final fallback to in-memory storage');
+        this.memoryManager = await MemoryManagerFactory.createMemoryManager('memory');
+        logger.info('Successfully initialized with fallback in-memory strategy');
+        return this.memoryManager;
+      } catch (fallbackError) {
+        logger.error('All memory strategies failed to initialize', fallbackError);
+        this.memoryManager = null;
+        return null;
       }
     }
   }
@@ -133,16 +143,51 @@ export class MemoryService {
    */
   async clearAllMemories() {
     if (!this.memoryManager) {
-      console.warn('[MemoryService] Memory manager not available');
+      logger.warn('Memory manager not available');
       return false;
     }
 
     try {
       await this.memoryManager.clearAllMemories();
+      logger.info('All memories cleared successfully');
       return true;
     } catch (error) {
-      console.error('[MemoryService] Failed to clear memories:', error);
+      logger.error('Failed to clear memories', error);
       return false;
     }
+  }
+
+  /**
+   * 停止内存服务
+   * @returns {Promise<void>}
+   */
+  async stopService() {
+    try {
+      logger.info('Stopping memory service...');
+
+      // 停止ChromaDB服务
+      await this.chromaService.stopChromaDB();
+
+      // 清理内存管理器引用
+      this.memoryManager = null;
+
+      logger.info('Memory service stopped successfully');
+    } catch (error) {
+      logger.error('Error stopping memory service', error);
+    }
+  }
+
+  /**
+   * 获取服务状态
+   * @returns {Object} 服务状态信息
+   */
+  getServiceStatus() {
+    return {
+      memoryManager: {
+        available: !!this.memoryManager,
+        type: this.memoryManager?.constructor?.name || 'none'
+      },
+      chromaService: this.chromaService.getStatus()
+    };
   }
 }
