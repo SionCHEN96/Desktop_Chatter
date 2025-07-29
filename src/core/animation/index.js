@@ -1,1 +1,1 @@
-export { AnimationStateMachine } from './animationStateMachine.js';
+export { AnimationStateMachine } from './AnimationStateMachine.js';

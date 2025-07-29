@@ -2,38 +2,84 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { ANIMATION_CONFIG } from '../../config/index.js';
 
-// 动画状态机类
+/**
+ * @typedef {Object} AnimationState
+ * @property {string} name - 动画状态名称
+ * @property {THREE.AnimationAction} action - Three.js动画动作
+ * @property {boolean} loop - 是否循环播放
+ * @property {number} weight - 动画权重
+ * @property {number} timeScale - 时间缩放
+ */
+
+/**
+ * @typedef {Object} AnimationTransition
+ * @property {string} from - 源状态
+ * @property {string} to - 目标状态
+ * @property {number} duration - 过渡时间（毫秒）
+ * @property {string} mode - 过渡模式
+ */
+
+/**
+ * 动画状态机类
+ * 管理3D角色的动画状态转换和播放
+ *
+ * @class AnimationStateMachine
+ */
 export class AnimationStateMachine {
+  /**
+   * 创建动画状态机实例
+   */
   constructor() {
+    /** @type {Map<string, AnimationState>} 动画状态映射 */
     this.states = new Map();
+
+    /** @type {string|null} 当前动画状态 */
     this.currentState = null;
+
+    /** @type {string|null} 前一个动画状态 */
     this.previousState = null;
+
+    /** @type {THREE.AnimationMixer|null} Three.js动画混合器 */
     this.mixer = null;
+
+    /** @type {THREE.Scene|null} Three.js场景 */
     this.scene = null;
+
+    /** @type {THREE.Object3D|null} 角色对象 */
     this.character = null;
+
+    /** @type {Map<string, THREE.AnimationAction>} 已加载的动画动作 */
     this.loadedActions = new Map();
+
+    /** @type {boolean} 是否正在过渡中 */
     this.isTransitioning = false;
   }
 
-  // 初始化状态机
+  /**
+   * 初始化动画状态机
+   * @param {THREE.Scene} scene - Three.js场景对象
+   * @param {THREE.Object3D} character - 角色对象
+   * @param {THREE.AnimationMixer} mixer - 动画混合器
+   * @returns {AnimationStateMachine} 返回自身以支持链式调用
+   */
   init(scene, character, mixer) {
     this.scene = scene;
     this.character = character;
     this.mixer = mixer;
-    
+
     // 定义状态
     this.defineState('idle', {
       animation: 'idle',
       transitions: ['thinking', 'joy', 'sad'],
       loop: true
     });
-    
+
     this.defineState('thinking', {
       animation: 'thinking',
       transitions: ['idle', 'joy', 'sad'],
       loop: true
     });
-    
+
     this.defineState('joy', {
       animation: 'joy',
       transitions: ['idle'],
@@ -41,7 +87,7 @@ export class AnimationStateMachine {
       autoTransition: 'idle',
       transitionDelay: 3000
     });
-    
+
     this.defineState('sad', {
       animation: 'sad',
       transitions: ['idle'],
@@ -49,11 +95,22 @@ export class AnimationStateMachine {
       autoTransition: 'idle',
       transitionDelay: 3000
     });
-    
+
     return this;
   }
 
-  // 定义状态
+  /**
+   * 定义动画状态
+   * @param {string} name - 状态名称
+   * @param {Object} config - 状态配置
+   * @param {string} config.animation - 动画名称
+   * @param {string[]} [config.transitions] - 可转换到的状态列表
+   * @param {boolean} [config.loop=true] - 是否循环播放
+   * @param {string} [config.autoTransition] - 自动转换到的状态
+   * @param {number} [config.transitionDelay=0] - 自动转换延迟（毫秒）
+   * @param {Function} [config.onEnter] - 进入状态时的回调
+   * @param {Function} [config.onExit] - 退出状态时的回调
+   */
   defineState(name, config) {
     this.states.set(name, {
       name,
@@ -140,7 +197,7 @@ export class AnimationStateMachine {
   // 播放动画
   async playAnimation(stateName, stateConfig) {
     const animationName = stateConfig.animation;
-    
+
     // 检查动画是否已加载
     if (!this.loadedActions.has(stateName)) {
       await this.loadAnimation(stateName, animationName);
@@ -177,24 +234,24 @@ export class AnimationStateMachine {
       // 根据动画类型动态计算过渡时间
       let fadeDuration = 0.3;
       if ((this.previousState?.name === 'thinking' && stateName === 'idle') ||
-          (this.previousState?.name === 'idle' && stateName === 'thinking')) {
+        (this.previousState?.name === 'idle' && stateName === 'thinking')) {
         fadeDuration = 0.5;
       } else if (stateConfig.loop !== this.previousState?.loop) {
         // 如果循环状态改变，延长过渡时间
         fadeDuration = 0.7;
       }
-      
+
       // 启用动画混合
       currentlyPlayingAction.enabled = true;
       targetAction.enabled = true;
-      
+
       // 重置目标动作的时间
       targetAction.time = 0;
-      
+
       // 执行平滑交叉淡入淡出
       currentlyPlayingAction.crossFadeTo(targetAction, fadeDuration, true);
       targetAction.play();
-      
+
       // 等待过渡完成
       await new Promise(resolve => setTimeout(resolve, fadeDuration * 1000));
     } else {
@@ -203,7 +260,7 @@ export class AnimationStateMachine {
       targetAction.play();
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    
+
     // 停止所有其他动作
     if (this.mixer) {
       for (let i = 0; i < this.mixer._actions.length; i++) {
@@ -212,7 +269,7 @@ export class AnimationStateMachine {
         }
       }
     }
-    
+
     // 设置动画权重
     targetAction.setEffectiveWeight(1.0);
     targetAction.setEffectiveTimeScale(1.0);
@@ -238,17 +295,17 @@ export class AnimationStateMachine {
       loader.load(animationConfig.resource, (object) => {
         if (object.animations && object.animations.length > 0) {
           const action = this.mixer.clipAction(object.animations[0]);
-          
+
           // 设置动画混合权重和时间
           action.setEffectiveWeight(1.0);
           action.setEffectiveTimeScale(1.0);
           action.time = 0; // 重置动画时间
-          
+
           // 配置动画混合
           action.enabled = true;
           action.setLoop(stateConfig.loop ? THREE.LoopRepeat : THREE.LoopOnce, 1);
           action.clampWhenFinished = !stateConfig.loop;
-          
+
           this.loadedActions.set(stateName, action);
           console.log(`动画 "${animationName}" 加载完成`);
           resolve(action);
@@ -270,7 +327,7 @@ export class AnimationStateMachine {
         animationsToLoad.push(this.loadAnimation(stateName, stateConfig.animation));
       }
     }
-    
+
     try {
       await Promise.all(animationsToLoad);
       console.log('所有动画预加载完成');
