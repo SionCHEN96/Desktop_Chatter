@@ -23,10 +23,21 @@
 <body>
     <div class="chat-container">
         <div class="drag-handle"></div>
-        <div id="character-container"></div>
-        <div id="chat-messages" class="chat-messages"></div>
 
-        <!-- 可爱的折叠按钮 -->
+        <!-- 主要内容区域：左右布局 -->
+        <div class="main-content">
+            <!-- 左侧：3D模型容器 -->
+            <div class="left-panel">
+                <div id="character-container"></div>
+            </div>
+
+            <!-- 右侧：AI回复气泡容器 -->
+            <div class="right-panel">
+                <div id="chat-messages" class="chat-messages"></div>
+            </div>
+        </div>
+
+        <!-- 中间底部：折叠按钮 -->
         <div id="toggle-chat-button" class="toggle-chat-button">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path

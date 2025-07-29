@@ -56,7 +56,8 @@ function initCharacter3D(width, height) {
   // 创建场景
   scene = new THREE.Scene();
   scene.background = null;
-  camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  // 增加FOV到90度，扩大视野范围，确保能看到完整的模型
+  camera = new THREE.PerspectiveCamera(90, width / height, 0.1, 1000);
   renderer = new THREE.WebGLRenderer({
     alpha: true,
     antialias: true, // 启用抗锯齿提高渲染质量
@@ -172,13 +173,22 @@ function loadFBXModel() {
       }
     });
 
-    // 调整模型在场景中的垂直位置，使模型显示在更合适的位置
-    fbxModel.position.set(0, 0.3, 0); // 将模型Y轴位置从0.12调整为0.2，提高模型位置
+    // 调整模型在场景中的位置和缩放，配合新的容器设置
+    fbxModel.position.set(0, -2.5, 0); // 大幅降低模型位置，确保脚部可见
+    fbxModel.scale.set(1.6, 1.6, 1.6); // 适当放大模型，利用容器的高度空间
+
+    // 计算模型的边界盒，用于调试
+    const box = new THREE.Box3().setFromObject(fbxModel);
+    console.log('模型边界盒:', box);
+    console.log('模型高度:', box.max.y - box.min.y);
+    console.log('模型最低点:', box.min.y);
+    console.log('模型最高点:', box.max.y);
 
     scene.add(fbxModel);
 
-    // 调整相机位置以更好地显示模型 - 靠近角色
-    camera.position.set(0, 1, 3); // 将相机Z轴位置从1.5调整回2，增加一些距离以更好地显示模型
+    // 调整相机位置以更好地显示完整模型 - 配合90度FOV
+    camera.position.set(0, -0.5, 1.5); // 降低相机高度到模型中心，确保能看到完整模型
+    camera.lookAt(0, -1, 0); // 让相机看向模型中心位置
 
     // 创建动画混合器
     mixer = new THREE.AnimationMixer(fbxModel);
