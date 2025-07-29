@@ -8,7 +8,11 @@ export class CharacterManager {
 
   init() {
     const containerInfo = initCharacterContainer();
-    this.animationStateMachine = containerInfo.animationStateMachine;
+    if (containerInfo) {
+      console.log('[CharacterManager] 容器初始化成功', containerInfo);
+    } else {
+      console.error('[CharacterManager] 容器初始化失败');
+    }
   }
 
   playAnimation(animationName) {

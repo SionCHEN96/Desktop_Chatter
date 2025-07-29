@@ -30,6 +30,9 @@ export function initCharacterContainer() {
     // 监听窗口大小变化，重新调整渲染器尺寸
     window.addEventListener('resize', onWindowResize);
 
+    // 初始化3D模型拖拽功能
+    initModelDrag();
+
     return { width, height, scene, camera };
   }
   return null;
@@ -253,4 +256,112 @@ function animate() {
 export function playSimpleAnimation() {
   // 对于FBX模型，暂时不实现特殊动画
   console.log("播放简单动画");
+}
+
+// 拖拽相关变量
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let pendingMove = null;
+
+// 初始化3D模型拖拽功能
+function initModelDrag() {
+  console.log('[拖拽功能] 开始初始化拖拽功能');
+
+  if (!characterContainer) {
+    console.error('[拖拽功能] characterContainer 未找到');
+    return;
+  }
+
+  console.log('[拖拽功能] characterContainer 找到，开始添加事件监听器');
+
+  // 调试：检查元素状态
+  const computedStyle = window.getComputedStyle(characterContainer);
+  console.log('[拖拽功能] 元素状态检查:', {
+    display: computedStyle.display,
+    visibility: computedStyle.visibility,
+    pointerEvents: computedStyle.pointerEvents,
+    zIndex: computedStyle.zIndex,
+    position: computedStyle.position,
+    width: characterContainer.offsetWidth,
+    height: characterContainer.offsetHeight,
+    left: characterContainer.offsetLeft,
+    top: characterContainer.offsetTop
+  });
+
+  // 鼠标按下事件
+  characterContainer.addEventListener('mousedown', (event) => {
+    console.log('[拖拽功能] 鼠标按下事件触发', event.button);
+
+    // 只响应左键点击
+    if (event.button !== 0) return;
+
+    isDragging = true;
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+
+    console.log('[拖拽功能] 开始拖拽', { dragStartX, dragStartY });
+
+    // 改变鼠标样式
+    characterContainer.style.cursor = 'grabbing';
+
+    // 阻止默认行为
+    event.preventDefault();
+  });
+
+  // 鼠标移动事件 - 使用requestAnimationFrame确保平滑移动
+  document.addEventListener('mousemove', (event) => {
+    if (!isDragging) return;
+
+    // 计算移动距离
+    const deltaX = event.clientX - dragStartX;
+    const deltaY = event.clientY - dragStartY;
+
+    // 只有移动距离足够大时才处理，避免微小抖动
+    if (Math.abs(deltaX) < 2 && Math.abs(deltaY) < 2) {
+      return;
+    }
+
+    // 取消之前的pending move
+    if (pendingMove) {
+      cancelAnimationFrame(pendingMove);
+    }
+
+    // 使用requestAnimationFrame确保平滑移动
+    pendingMove = requestAnimationFrame(() => {
+      console.log('[拖拽功能] 鼠标移动', { deltaX, deltaY });
+
+      // 通过IPC发送窗口移动请求
+      if (window.electronAPI && window.electronAPI.moveWindow) {
+        window.electronAPI.moveWindow(deltaX, deltaY);
+      } else {
+        console.error('[拖拽功能] electronAPI.moveWindow 不可用');
+      }
+
+      pendingMove = null;
+    });
+
+    // 更新起始位置
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+  });
+
+  // 鼠标释放事件
+  document.addEventListener('mouseup', () => {
+    if (isDragging) {
+      console.log('[拖拽功能] 结束拖拽');
+      isDragging = false;
+      characterContainer.style.cursor = 'grab';
+
+      // 清理pending move
+      if (pendingMove) {
+        cancelAnimationFrame(pendingMove);
+        pendingMove = null;
+      }
+    }
+  });
+
+  // 设置初始鼠标样式
+  characterContainer.style.cursor = 'grab';
+  console.log('[拖拽功能] 拖拽功能初始化完成');
 }
