@@ -34,3 +34,14 @@ export {
     ANIMATION_TRANSITION,
     ANIMATION_BLEND_MODE
 } from './animationConfig.js';
+
+// 渲染配置
+export {
+    RENDERER_CONFIG,
+    PBR_MATERIAL_CONFIG,
+    LIGHTING_CONFIG,
+    POST_PROCESSING_CONFIG,
+    CAMERA_CONFIG,
+    PERFORMANCE_CONFIG,
+    ENVIRONMENT_CONFIG
+} from './renderConfig.js';
