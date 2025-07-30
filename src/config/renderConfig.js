@@ -29,7 +29,7 @@ export const RENDERER_CONFIG = {
   // 色彩空间和色调映射
   outputColorSpace: 'srgb',
   toneMapping: 'ACESFilmic',
-  toneMappingExposure: 1.0,
+  toneMappingExposure: 0.7, // 降低曝光值，减少整体亮度
   
   // 阴影设置
   shadowMap: {
@@ -53,7 +53,7 @@ export const PBR_MATERIAL_CONFIG = {
   // 默认PBR材质属性
   metalness: 0.1,
   roughness: 0.7,
-  envMapIntensity: 1.0,
+  envMapIntensity: 0.6, // 降低环境贴图强度，减少反射亮度
   transparent: false,
   opacity: 1.0,
   
@@ -89,7 +89,7 @@ export const LIGHTING_CONFIG = {
   // 主方向光（太阳光）
   directional: {
     color: 0xffffff,
-    intensity: 3.0, // 增加强度以获得更好的对比度
+    intensity: 1.8, // 降低主光源强度，减少整体亮度
     position: [10, 10, 5],
     castShadow: true,
     shadow: {
@@ -106,34 +106,34 @@ export const LIGHTING_CONFIG = {
       normalBias: 0.02
     }
   },
-  
+
   // 填充光（柔和的侧光）
   fill: {
     color: 0xffffff,
-    intensity: 1.0,
+    intensity: 0.5, // 降低填充光强度
     position: [-5, 5, 5],
     castShadow: false
   },
-  
+
   // 轮廓光（背光）
   rim: {
     color: 0xffffff,
-    intensity: 0.8,
+    intensity: 0.4, // 降低轮廓光强度
     position: [0, 5, -5],
     castShadow: false
   },
-  
+
   // 环境光
   ambient: {
     color: 0xffffff,
-    intensity: 0.4 // 适中的环境光强度
+    intensity: 0.2 // 降低环境光强度，减少整体亮度
   },
-  
+
   // 半球光（天空光）
   hemisphere: {
     skyColor: 0xffffbb,
     groundColor: 0x080820,
-    intensity: 0.3
+    intensity: 0.15 // 降低半球光强度
   }
 };
 
