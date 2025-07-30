@@ -18,6 +18,15 @@ let mixer; // Animation mixer for the FBX animation
 const clock = new THREE.Clock();
 let animationStateMachine = null; // 动画状态机实例
 
+// 鼠标跟踪相关变量 (已禁用)
+let mousePosition = { x: 0, y: 0 };
+let headBone = null; // 头部骨骼
+let neckBone = null; // 颈部骨骼
+let eyeBones = []; // 眼部骨骼
+let isMouseTracking = false; // 禁用鼠标跟踪
+let lastMouseMoveTime = 0; // 最后鼠标移动时间
+const MOUSE_IDLE_TIMEOUT = 3000; // 鼠标静止3秒后回到默认位置
+
 // 初始化容器
 export function initCharacterContainer() {
   characterContainer = document.getElementById('character-container');
@@ -34,6 +43,9 @@ export function initCharacterContainer() {
 
     // 初始化3D模型拖拽功能
     initModelDrag();
+
+    // 初始化鼠标跟踪功能 (已禁用)
+    // initMouseTracking();
 
     return { width, height, scene, camera };
   }
@@ -120,6 +132,9 @@ function loadFBXModel() {
     // 创建动画状态机
     animationStateMachine = new AnimationStateMachine().init(scene, fbxModel, mixer);
 
+    // 查找头部和颈部骨骼用于鼠标跟踪 (已禁用)
+    // findHeadAndNeckBones(fbxModel);
+
     // 应用一个自然的初始姿势，避免T-pose
     // 遍历模型骨骼并应用自然姿势
     fbxModel.traverse((child) => {
@@ -169,6 +184,9 @@ function animate() {
   if (mixer) {
     mixer.update(delta);
   }
+
+  // 更新鼠标跟踪 (已禁用)
+  // updateMouseTracking(delta);
 
   // 使用高质量渲染器渲染
   if (highQualityRenderer) {
@@ -391,4 +409,219 @@ function stopSmoothAnimation() {
     cancelAnimationFrame(animationId);
     animationId = null;
   }
+}
+
+// 初始化鼠标跟踪功能
+function initMouseTracking() {
+  if (!characterContainer) return;
+
+  // 监听鼠标移动事件
+  characterContainer.addEventListener('mousemove', onMouseMove);
+  characterContainer.addEventListener('mouseleave', onMouseLeave);
+
+  console.log('鼠标跟踪功能已初始化');
+}
+
+// 鼠标移动事件处理
+function onMouseMove(event) {
+  if (!characterContainer) return;
+
+  const rect = characterContainer.getBoundingClientRect();
+
+  // 将鼠标坐标转换为标准化坐标 (-1 到 1)
+  mousePosition.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mousePosition.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  lastMouseMoveTime = Date.now();
+  isMouseTracking = true;
+
+  // 限制鼠标位置范围，避免过度转动
+  mousePosition.x = Math.max(-0.8, Math.min(0.8, mousePosition.x));
+  mousePosition.y = Math.max(-0.5, Math.min(0.5, mousePosition.y));
+}
+
+// 鼠标离开事件处理
+function onMouseLeave() {
+  isMouseTracking = false;
+  // 逐渐回到默认位置
+  setTimeout(() => {
+    if (!isMouseTracking) {
+      mousePosition.x = 0;
+      mousePosition.y = 0;
+    }
+  }, 500);
+}
+
+// 查找头部和颈部骨骼
+function findHeadAndNeckBones(model) {
+  model.traverse((child) => {
+    if (child.isBone) {
+      const boneName = child.name.toLowerCase();
+
+      // 查找头部骨骼
+      if (boneName.includes('head') || boneName.includes('头')) {
+        headBone = child;
+        console.log('找到头部骨骼:', child.name);
+      }
+
+      // 查找颈部骨骼
+      if (boneName.includes('neck') || boneName.includes('颈') || boneName.includes('脖子')) {
+        neckBone = child;
+        console.log('找到颈部骨骼:', child.name);
+      }
+
+      // 查找眼部骨骼
+      if (boneName.includes('eye') || boneName.includes('眼')) {
+        eyeBones.push(child);
+        console.log('找到眼部骨骼:', child.name);
+      }
+    }
+  });
+
+  // 如果没有找到特定骨骼，尝试通过位置查找
+  if (!headBone && !neckBone) {
+    console.log('未找到命名的头部/颈部骨骼，尝试通过位置查找...');
+    findBonesByPosition(model);
+  }
+}
+
+// 通过位置查找骨骼（备用方法）
+function findBonesByPosition(model) {
+  let highestBone = null;
+  let highestY = -Infinity;
+
+  model.traverse((child) => {
+    if (child.isBone) {
+      const worldPosition = new THREE.Vector3();
+      child.getWorldPosition(worldPosition);
+
+      if (worldPosition.y > highestY) {
+        highestY = worldPosition.y;
+        highestBone = child;
+      }
+    }
+  });
+
+  if (highestBone) {
+    headBone = highestBone;
+    console.log('通过位置找到可能的头部骨骼:', highestBone.name);
+  }
+}
+
+// 更新鼠标跟踪
+function updateMouseTracking(delta) {
+  if (!fbxModel || (!headBone && !neckBone)) return;
+
+  // 检查是否应该启用鼠标跟踪
+  const currentTime = Date.now();
+  const timeSinceLastMove = currentTime - lastMouseMoveTime;
+
+  // 如果鼠标静止超过设定时间，逐渐回到默认位置
+  if (timeSinceLastMove > MOUSE_IDLE_TIMEOUT) {
+    mousePosition.x = THREE.MathUtils.lerp(mousePosition.x, 0, delta * 2);
+    mousePosition.y = THREE.MathUtils.lerp(mousePosition.y, 0, delta * 2);
+  }
+
+  // 计算目标旋转角度 - 增加转动幅度
+  const targetRotationY = mousePosition.x * 0.8; // 水平转动范围 (增加到0.8)
+  const targetRotationX = mousePosition.y * 0.6; // 垂直转动范围 (增加到0.6)
+
+  // 平滑插值到目标角度 - 增加跟踪速度
+  const lerpFactor = delta * 5; // 调整跟踪速度 (增加到5)
+
+  // 更新头部骨骼
+  if (headBone) {
+    // 保存原始旋转
+    if (!headBone.userData.originalRotation) {
+      headBone.userData.originalRotation = {
+        x: headBone.rotation.x,
+        y: headBone.rotation.y,
+        z: headBone.rotation.z
+      };
+    }
+
+    const originalRot = headBone.userData.originalRotation;
+    headBone.rotation.y = THREE.MathUtils.lerp(
+      headBone.rotation.y,
+      originalRot.y + targetRotationY,
+      lerpFactor
+    );
+    headBone.rotation.x = THREE.MathUtils.lerp(
+      headBone.rotation.x,
+      originalRot.x + targetRotationX,
+      lerpFactor
+    );
+  }
+
+  // 更新颈部骨骼（如果存在）
+  if (neckBone) {
+    // 保存原始旋转
+    if (!neckBone.userData.originalRotation) {
+      neckBone.userData.originalRotation = {
+        x: neckBone.rotation.x,
+        y: neckBone.rotation.y,
+        z: neckBone.rotation.z
+      };
+    }
+
+    const originalRot = neckBone.userData.originalRotation;
+    // 颈部的转动幅度适中
+    neckBone.rotation.y = THREE.MathUtils.lerp(
+      neckBone.rotation.y,
+      originalRot.y + targetRotationY * 0.7,
+      lerpFactor
+    );
+    neckBone.rotation.x = THREE.MathUtils.lerp(
+      neckBone.rotation.x,
+      originalRot.x + targetRotationX * 0.5,
+      lerpFactor
+    );
+  }
+
+  // 更新眼部骨骼（如果存在）
+  eyeBones.forEach(eyeBone => {
+    if (!eyeBone.userData.originalRotation) {
+      eyeBone.userData.originalRotation = {
+        x: eyeBone.rotation.x,
+        y: eyeBone.rotation.y,
+        z: eyeBone.rotation.z
+      };
+    }
+
+    const originalRot = eyeBone.userData.originalRotation;
+    // 眼部转动幅度与头部接近，更明显
+    eyeBone.rotation.y = THREE.MathUtils.lerp(
+      eyeBone.rotation.y,
+      originalRot.y + targetRotationY * 1.0,
+      lerpFactor
+    );
+    eyeBone.rotation.x = THREE.MathUtils.lerp(
+      eyeBone.rotation.x,
+      originalRot.x + targetRotationX * 0.8,
+      lerpFactor
+    );
+  });
+}
+
+// 导出函数：启用/禁用鼠标跟踪
+export function setMouseTracking(enabled) {
+  isMouseTracking = enabled;
+  console.log('鼠标跟踪功能', enabled ? '已启用' : '已禁用');
+
+  // 如果禁用，逐渐回到默认位置
+  if (!enabled) {
+    mousePosition.x = 0;
+    mousePosition.y = 0;
+  }
+}
+
+// 导出函数：获取鼠标跟踪状态
+export function getMouseTrackingStatus() {
+  return {
+    enabled: isMouseTracking,
+    mousePosition: { ...mousePosition },
+    hasHeadBone: !!headBone,
+    hasNeckBone: !!neckBone,
+    eyeBonesCount: eyeBones.length
+  };
 }
