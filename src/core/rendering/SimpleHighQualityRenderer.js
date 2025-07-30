@@ -185,22 +185,22 @@ export class SimpleHighQualityRenderer {
     canvas.height = size;
     const context = canvas.getContext('2d');
     
-    // 创建工作室风格的渐变
+    // 创建更暗的工作室风格渐变
     const gradient = context.createLinearGradient(0, 0, 0, size);
-    gradient.addColorStop(0, '#ffffff');    // 顶部白色
-    gradient.addColorStop(0.3, '#f0f0f0');  // 上部浅灰
-    gradient.addColorStop(0.7, '#e0e0e0');  // 中部灰色
-    gradient.addColorStop(1, '#d0d0d0');    // 底部深灰
+    gradient.addColorStop(0, '#e0e0e0');    // 顶部浅灰（降低亮度）
+    gradient.addColorStop(0.3, '#c0c0c0');  // 上部中灰
+    gradient.addColorStop(0.7, '#a0a0a0');  // 中部深灰
+    gradient.addColorStop(1, '#808080');    // 底部更深灰
     
     context.fillStyle = gradient;
     context.fillRect(0, 0, size, size);
     
-    // 添加一些高光区域模拟工作室灯光
+    // 添加更柔和的高光区域模拟工作室灯光
     const mainLight = context.createRadialGradient(
       size * 0.3, size * 0.2, 0,
       size * 0.3, size * 0.2, size * 0.15
     );
-    mainLight.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+    mainLight.addColorStop(0, 'rgba(255, 255, 255, 0.4)'); // 降低高光强度
     mainLight.addColorStop(1, 'rgba(255, 255, 255, 0)');
     
     context.fillStyle = mainLight;
