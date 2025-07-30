@@ -9,7 +9,7 @@ export class InputManager {
     this.input = inputElement;
     this.options = {
       maxLength: 1000,
-      placeholder: '请输入您的消息...',
+      placeholder: '和我聊聊吧~ ✨',
       enableHistory: true,
       historySize: 20,
       ...options
