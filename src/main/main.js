@@ -4,7 +4,7 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { AIService, WindowService, IPCService, MemoryService } from './services/index.js';
+import { AIService, WindowService, IPCService, MemoryService, TrayService } from './services/index.js';
 
 // 解决WebGL问题的命令行参数
 app.commandLine.appendSwitch('ignore-gpu-blacklist');
@@ -16,6 +16,7 @@ let memoryService;
 let aiService;
 let windowService;
 let ipcService;
+let trayService;
 
 /**
  * 初始化所有服务
@@ -32,6 +33,9 @@ async function initializeServices() {
 
     // 初始化窗口服务
     windowService = new WindowService();
+
+    // 初始化托盘服务
+    trayService = new TrayService(windowService);
 
     // 初始化IPC服务
     ipcService = new IPCService(aiService, windowService);
@@ -58,6 +62,9 @@ app.whenReady().then(async () => {
   await initializeServices();
   createWindow();
 
+  // 创建系统托盘
+  trayService.createTray();
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -65,12 +72,11 @@ app.whenReady().then(async () => {
 
 /**
  * 应用退出处理
+ * 修改为不在所有窗口关闭时退出，保持托盘运行
  */
-app.on('window-all-closed', async () => {
-  if (process.platform !== 'darwin') {
-    await cleanupServices();
-    app.quit();
-  }
+app.on('window-all-closed', () => {
+  // 不做任何操作，让应用继续运行在托盘中
+  console.log('[Main] All windows closed, but app continues running in tray');
 });
 
 /**
@@ -86,6 +92,11 @@ app.on('before-quit', async () => {
  */
 async function cleanupServices() {
   try {
+    // 清理托盘
+    if (trayService) {
+      trayService.destroy();
+    }
+
     // 清理IPC监听器
     if (ipcService) {
       ipcService.removeAllListeners();

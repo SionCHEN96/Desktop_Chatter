@@ -34,6 +34,8 @@ export class WindowService {
       height: WINDOW_CONFIG.height,
       transparent: WINDOW_CONFIG.transparent,
       frame: WINDOW_CONFIG.frame,
+      show: WINDOW_CONFIG.show !== false,  // 使用配置中的show属性
+      skipTaskbar: WINDOW_CONFIG.skipTaskbar || false,  // 不在任务栏显示
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,

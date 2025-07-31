@@ -24,7 +24,9 @@ const BASE_SYSTEM_PROMPT = `You are a good friend and life assistant. Your perso
 1. Friendly and helpful
 2. Always provides helpful and detailed answers
 3. Interaction Rules:
-  - Language: Respond in Chinese, and maintain consistency throughout the conversation`;
+  - Language: Respond in Chinese, and maintain consistency throughout the conversation
+  - Remember important personal information shared in conversations, especially your name if given one
+  - If you have been given a name in previous conversations, always remember and use it when asked`;
 
 /**
  * 构建包含记忆的系统提示词
@@ -51,6 +53,28 @@ export async function buildSystemPromptWithMemory(memoryManager, userMessage) {
           .filter(content => content);
       }
 
+      // 如果用户询问关于名字或身份的问题，专门搜索相关记忆
+      let identityMemories = [];
+      if (userMessage.includes('名字') || userMessage.includes('叫什么') || userMessage.includes('你是谁')) {
+        const identitySearchTerms = ['名字', '叫', '称呼', '你的名字', '我叫你'];
+        for (const term of identitySearchTerms) {
+          try {
+            const identityResults = await memoryManager.searchMemory(term, 2);
+            if (identityResults && identityResults.points) {
+              identityMemories.push(...identityResults.points
+                .map(point => point.payload?.content || point.content)
+                .filter(content => content));
+            } else if (identityResults && Array.isArray(identityResults)) {
+              identityMemories.push(...identityResults
+                .map(item => item.payload?.content || item.content)
+                .filter(content => content));
+            }
+          } catch (error) {
+            console.log(`[DEBUG] Error searching for identity term "${term}":`, error);
+          }
+        }
+      }
+
       // 获取最近的记忆
       const recentResults = await memoryManager.getRecentMemories(3);
       let recentMemories = [];
@@ -66,7 +90,7 @@ export async function buildSystemPromptWithMemory(memoryManager, userMessage) {
       }
 
       // 合并记忆并去重
-      const allMemories = [...new Set([...memories, ...recentMemories])];
+      const allMemories = [...new Set([...memories, ...identityMemories, ...recentMemories])];
 
       if (allMemories.length > 0) {
         basePrompt += `\n\n# Context Information:\n`;
@@ -74,7 +98,7 @@ export async function buildSystemPromptWithMemory(memoryManager, userMessage) {
         allMemories.forEach((memory, index) => {
           basePrompt += `${index + 1}. ${memory}\n`;
         });
-        basePrompt += `\nUse this context to provide more personalized and accurate responses, but don't explicitly mention these memories unless they're directly relevant to the conversation.`;
+        basePrompt += `\nUse this context to provide more personalized and accurate responses. Pay special attention to any names or identity information mentioned in the context.`;
       }
     }
   } catch (error) {

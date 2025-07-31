@@ -37,7 +37,9 @@ export const WINDOW_CONFIG = {
   width: 800,
   height: 450,
   transparent: true,
-  frame: false
+  frame: false,
+  show: true,           // 启动时显示窗口
+  skipTaskbar: true     // 不在任务栏显示
 };
 
 /**
