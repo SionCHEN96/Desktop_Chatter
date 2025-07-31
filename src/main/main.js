@@ -4,7 +4,7 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { AIService, WindowService, IPCService, MemoryService, TrayService } from './services/index.js';
+import { AIService, WindowService, IPCService, MemoryService, TrayService, AudioService } from './services/index.js';
 
 // 解决WebGL问题的命令行参数
 app.commandLine.appendSwitch('ignore-gpu-blacklist');
@@ -14,6 +14,7 @@ app.commandLine.appendSwitch('disable-gpu-compositing');
 // 服务实例
 let memoryService;
 let aiService;
+let audioService;
 let windowService;
 let ipcService;
 let trayService;
@@ -28,6 +29,9 @@ async function initializeServices() {
     memoryService = new MemoryService();
     await memoryService.initializeMemoryManager();
 
+    // 初始化音频服务
+    audioService = new AudioService();
+
     // 初始化AI服务
     aiService = new AIService(memoryService.getMemoryManager());
 
@@ -38,7 +42,7 @@ async function initializeServices() {
     trayService = new TrayService(windowService);
 
     // 初始化IPC服务
-    ipcService = new IPCService(aiService, windowService);
+    ipcService = new IPCService(aiService, windowService, audioService);
 
     console.log('[Main] All services initialized successfully');
   } catch (error) {

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用内音频测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 AI Companion 音频功能测试</h1>
+    
+    <div class="test-container">
+        <h3>测试生成的音频文件</h3>
+        <p>点击下面的按钮测试播放已生成的香菱语音文件</p>
+        
+        <button class="test-button" onclick="testAudio('generated_audio/test.wav')">
+            播放测试音频 1
+        </button>
+        
+        <button class="test-button" onclick="testAudio('generated_audio/xiangling_test.wav')">
+            播放香菱测试音频
+        </button>
+        
+        <button class="test-button" onclick="listAudioFiles()">
+            列出所有音频文件
+        </button>
+        
+        <div id="status"></div>
+        <div id="audio-list"></div>
+    </div>
+
+    <div class="test-container">
+        <h3>模拟AI对话测试</h3>
+        <p>这里可以模拟发送消息给AI，测试完整的语音合成流程</p>
+        
+        <input type="text" id="messageInput" placeholder="输入测试消息..." style="width: 70%; padding: 8px;">
+        <button class="test-button" onclick="sendTestMessage()">发送测试消息</button>
+        
+        <div id="conversation"></div>
+    </div>
+
+    <script>
+        let currentAudio = null;
+
+        function addStatus(message, type = 'status') {
+            const statusDiv = document.getElementById('status');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.appendChild(statusElement);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function testAudio(audioPath) {
+            addStatus(`尝试播放: ${audioPath}`);
+            
+            try {
+                // 停止当前播放的音频
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                }
+
+                // 创建新的音频元素
+                currentAudio = new Audio(audioPath);
+                currentAudio.volume = 0.8;
+
+                // 添加事件监听器
+                currentAudio.addEventListener('loadstart', () => {
+                    addStatus('音频开始加载...');
+                });
+
+                currentAudio.addEventListener('canplay', () => {
+                    addStatus('音频可以播放', 'success');
+                });
+
+                currentAudio.addEventListener('play', () => {
+                    addStatus('音频开始播放', 'success');
+                });
+
+                currentAudio.addEventListener('ended', () => {
+                    addStatus('音频播放完成', 'success');
+                });
+
+                currentAudio.addEventListener('error', (error) => {
+                    addStatus(`音频播放错误: ${error.message || '未知错误'}`, 'error');
+                });
+
+                // 播放音频
+                currentAudio.play()
+                    .then(() => {
+                        addStatus('音频播放开始');
+                    })
+                    .catch(error => {
+                        addStatus(`播放失败: ${error.message}`, 'error');
+                    });
+
+            } catch (error) {
+                addStatus(`播放错误: ${error.message}`, 'error');
+            }
+        }
+
+        function listAudioFiles() {
+            addStatus('列出音频文件...');
+            
+            // 已知的音频文件列表
+            const knownFiles = [
+                'test.wav',
+                'xiangling_test.wav',
+                'xiangling_1753960055173.wav',
+                'xiangling_1753960056687.wav',
+                'xiangling_1753960058138.wav',
+                'xiangling_1753960059574.wav',
+                'xiangling_1753960061030.wav',
+                'xiangling_1753960062490.wav'
+            ];
+            
+            const audioListDiv = document.getElementById('audio-list');
+            let html = '<h4>可用的音频文件:</h4>';
+            
+            knownFiles.forEach(file => {
+                html += `
+                    <div style="margin: 5px 0; padding: 5px; background: #f9f9f9; border-radius: 4px;">
+                        <span>${file}</span>
+                        <button class="test-button" style="padding: 2px 8px; margin-left: 10px;" 
+                                onclick="testAudio('generated_audio/${file}')">播放</button>
+                    </div>
+                `;
+            });
+            
+            audioListDiv.innerHTML = html;
+            addStatus(`找到 ${knownFiles.length} 个音频文件`, 'success');
+        }
+
+        function sendTestMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                addStatus('请输入测试消息', 'error');
+                return;
+            }
+            
+            addStatus(`发送测试消息: ${message}`);
+            
+            // 模拟AI响应
+            const responses = [
+                '你好！我是香菱，很高兴见到你！',
+                '今天想吃什么好吃的呢？我来为你做料理吧！',
+                '让我想想...这个食材可以做成很多美味的菜呢！',
+                '哇！这个组合听起来就很香呢！'
+            ];
+            
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            
+            // 显示对话
+            const conversationDiv = document.getElementById('conversation');
+            conversationDiv.innerHTML += `
+                <div style="margin: 10px 0; padding: 10px; background: #e3f2fd; border-radius: 4px;">
+                    <strong>用户:</strong> ${message}
+                </div>
+                <div style="margin: 10px 0; padding: 10px; background: #f3e5f5; border-radius: 4px;">
+                    <strong>香菱:</strong> ${randomResponse}
+                </div>
+            `;
+            
+            addStatus(`AI响应: ${randomResponse}`, 'success');
+            addStatus('注意: 这是模拟响应，实际应用中会自动生成和播放语音');
+            
+            input.value = '';
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            addStatus('音频测试页面加载完成', 'success');
+            addStatus('请点击按钮测试音频播放功能');
+        });
+    </script>
+</body>
+</html>

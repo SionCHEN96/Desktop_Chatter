@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .audio-player {
+            margin-top: 10px;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Companion 音频功能测试</h1>
+    
+    <div class="test-container">
+        <h2 class="test-title">1. 基础音频播放测试</h2>
+        <p>测试生成的音频文件是否可以正常播放</p>
+        <button class="test-button" onclick="testBasicAudioPlayback()">测试音频播放</button>
+        <div id="basic-audio-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-title">2. 香菱语音测试</h2>
+        <p>测试香菱的语音合成和播放</p>
+        <button class="test-button" onclick="testXianglingVoice()">测试香菱语音</button>
+        <div id="xiangling-voice-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-title">3. 音频文件列表</h2>
+        <p>查看已生成的音频文件</p>
+        <button class="test-button" onclick="listAudioFiles()">列出音频文件</button>
+        <div id="audio-files-result" class="test-result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-title">4. 测试状态</h2>
+        <div id="test-status"></div>
+    </div>
+
+    <script>
+        function addStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('test-status');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.appendChild(statusElement);
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function testBasicAudioPlayback() {
+            addStatus('开始测试基础音频播放...', 'info');
+            
+            const resultDiv = document.getElementById('basic-audio-result');
+            resultDiv.style.display = 'block';
+            
+            // 测试播放已生成的测试音频
+            const audioPath = './generated_audio/test.wav';
+            const audio = new Audio(audioPath);
+            
+            audio.addEventListener('loadstart', () => {
+                addStatus('音频开始加载', 'info');
+                resultDiv.innerHTML = '<div class="status info">正在加载音频文件...</div>';
+            });
+            
+            audio.addEventListener('canplay', () => {
+                addStatus('音频可以播放', 'success');
+                resultDiv.innerHTML += '<div class="status success">音频文件加载成功，可以播放</div>';
+            });
+            
+            audio.addEventListener('play', () => {
+                addStatus('音频开始播放', 'success');
+                resultDiv.innerHTML += '<div class="status success">音频开始播放</div>';
+            });
+            
+            audio.addEventListener('ended', () => {
+                addStatus('音频播放结束', 'success');
+                resultDiv.innerHTML += '<div class="status success">音频播放完成</div>';
+            });
+            
+            audio.addEventListener('error', (e) => {
+                addStatus(`音频播放错误: ${e.message}`, 'error');
+                resultDiv.innerHTML += `<div class="status error">音频播放错误: ${e.message}</div>`;
+            });
+            
+            // 添加音频控件
+            const audioElement = document.createElement('audio');
+            audioElement.src = audioPath;
+            audioElement.controls = true;
+            audioElement.className = 'audio-player';
+            resultDiv.appendChild(audioElement);
+            
+            // 尝试播放
+            audio.play().catch(error => {
+                addStatus(`播放失败: ${error.message}`, 'error');
+                resultDiv.innerHTML += `<div class="status error">播放失败: ${error.message}</div>`;
+            });
+        }
+
+        function testXianglingVoice() {
+            addStatus('开始测试香菱语音...', 'info');
+            
+            const resultDiv = document.getElementById('xiangling-voice-result');
+            resultDiv.style.display = 'block';
+            
+            // 测试播放香菱的音频
+            const audioPath = './generated_audio/xiangling_test.wav';
+            const audio = new Audio(audioPath);
+            
+            audio.addEventListener('loadstart', () => {
+                addStatus('香菱语音开始加载', 'info');
+                resultDiv.innerHTML = '<div class="status info">正在加载香菱语音文件...</div>';
+            });
+            
+            audio.addEventListener('canplay', () => {
+                addStatus('香菱语音可以播放', 'success');
+                resultDiv.innerHTML += '<div class="status success">香菱语音文件加载成功</div>';
+            });
+            
+            audio.addEventListener('play', () => {
+                addStatus('香菱语音开始播放', 'success');
+                resultDiv.innerHTML += '<div class="status success">香菱语音开始播放</div>';
+            });
+            
+            audio.addEventListener('ended', () => {
+                addStatus('香菱语音播放结束', 'success');
+                resultDiv.innerHTML += '<div class="status success">香菱语音播放完成</div>';
+            });
+            
+            audio.addEventListener('error', (e) => {
+                addStatus(`香菱语音播放错误: ${e.message}`, 'error');
+                resultDiv.innerHTML += `<div class="status error">香菱语音播放错误: ${e.message}</div>`;
+            });
+            
+            // 添加音频控件
+            const audioElement = document.createElement('audio');
+            audioElement.src = audioPath;
+            audioElement.controls = true;
+            audioElement.className = 'audio-player';
+            resultDiv.appendChild(audioElement);
+            
+            // 尝试播放
+            audio.play().catch(error => {
+                addStatus(`香菱语音播放失败: ${error.message}`, 'error');
+                resultDiv.innerHTML += `<div class="status error">播放失败: ${error.message}</div>`;
+            });
+        }
+
+        function listAudioFiles() {
+            addStatus('列出音频文件...', 'info');
+            
+            const resultDiv = document.getElementById('audio-files-result');
+            resultDiv.style.display = 'block';
+            
+            // 这里应该通过API获取文件列表，现在先显示已知的文件
+            const knownFiles = [
+                'test.wav',
+                'xiangling_test.wav'
+            ];
+            
+            let html = '<h4>已生成的音频文件:</h4><ul>';
+            knownFiles.forEach(file => {
+                html += `<li>
+                    ${file} 
+                    <button onclick="playAudioFile('${file}')" class="test-button" style="padding: 2px 8px; margin-left: 10px;">播放</button>
+                </li>`;
+            });
+            html += '</ul>';
+            
+            resultDiv.innerHTML = html;
+            addStatus(`找到 ${knownFiles.length} 个音频文件`, 'success');
+        }
+
+        function playAudioFile(filename) {
+            addStatus(`播放音频文件: ${filename}`, 'info');
+            
+            const audioPath = `./generated_audio/${filename}`;
+            const audio = new Audio(audioPath);
+            
+            audio.play().then(() => {
+                addStatus(`${filename} 开始播放`, 'success');
+            }).catch(error => {
+                addStatus(`播放 ${filename} 失败: ${error.message}`, 'error');
+            });
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            addStatus('音频功能测试页面加载完成', 'success');
+            addStatus('请点击上方按钮进行各项测试', 'info');
+        });
+    </script>
+</body>
+</html>

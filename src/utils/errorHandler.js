@@ -105,28 +105,62 @@ export class ErrorHandler {
    * @private
    */
   setupGlobalErrorHandlers() {
-    // 处理未捕获的异常
-    process.on('uncaughtException', (error) => {
-      logger.error('Uncaught Exception', error);
-      this.handleError(new AppError(
-        'Uncaught Exception',
-        ErrorType.INTERNAL,
-        ErrorSeverity.CRITICAL,
-        {},
-        error
-      ));
-    });
+    // 检查是否在Node.js环境中（主进程）
+    if (typeof process !== 'undefined' && process.on) {
+      // 处理未捕获的异常
+      process.on('uncaughtException', (error) => {
+        logger.error('Uncaught Exception', error);
+        this.handleError(new AppError(
+          'Uncaught Exception',
+          ErrorType.INTERNAL,
+          ErrorSeverity.CRITICAL,
+          {},
+          error
+        ));
+      });
 
-    // 处理未处理的Promise拒绝
-    process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled Rejection', { reason, promise });
-      this.handleError(new AppError(
-        'Unhandled Promise Rejection',
-        ErrorType.INTERNAL,
-        ErrorSeverity.HIGH,
-        { reason, promise }
-      ));
-    });
+      // 处理未处理的Promise拒绝
+      process.on('unhandledRejection', (reason, promise) => {
+        logger.error('Unhandled Rejection', { reason, promise });
+        this.handleError(new AppError(
+          'Unhandled Promise Rejection',
+          ErrorType.INTERNAL,
+          ErrorSeverity.HIGH,
+          { reason, promise }
+        ));
+      });
+    }
+
+    // 在浏览器环境中（渲染进程）处理全局错误
+    if (typeof window !== 'undefined') {
+      // 处理JavaScript错误
+      window.addEventListener('error', (event) => {
+        logger.error('Global Error', event.error);
+        this.handleError(new AppError(
+          'Global JavaScript Error',
+          ErrorType.INTERNAL,
+          ErrorSeverity.HIGH,
+          {
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno
+          },
+          event.error
+        ));
+      });
+
+      // 处理未处理的Promise拒绝
+      window.addEventListener('unhandledrejection', (event) => {
+        logger.error('Unhandled Promise Rejection', event.reason);
+        this.handleError(new AppError(
+          'Unhandled Promise Rejection',
+          ErrorType.INTERNAL,
+          ErrorSeverity.HIGH,
+          { reason: event.reason }
+        ));
+      });
+    }
   }
 
   /**
