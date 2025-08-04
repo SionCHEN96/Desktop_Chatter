@@ -73,7 +73,7 @@ docs/
 - [Electron官方文档](https://electronjs.org/docs)
 - [Three.js文档](https://threejs.org/docs/)
 - [VRM规范](https://vrm.dev/)
-- [Qdrant文档](https://qdrant.tech/documentation/)
+- [ChromaDB文档](https://docs.trychroma.com/)
 
 ### 开发工具
 - [LM Studio](https://lmstudio.ai/) - 本地AI模型运行环境

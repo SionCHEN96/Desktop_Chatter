@@ -14,7 +14,7 @@ AI Companion是一个创新的桌面应用程序，结合了3D虚拟角色、自
 
 - 🎭 **3D虚拟角色**: 基于Three.js和VRM模型的可交互3D角色
 - 💬 **自然语言交互**: 与LM Studio集成的AI对话系统
-- 🧠 **智能记忆管理**: 使用Qdrant向量数据库存储和检索对话历史
+- 🧠 **智能记忆管理**: 使用ChromaDB向量数据库存储和检索对话历史
 - 🎬 **动画状态机**: 支持多种角色动画状态（待机、思考、情感表达等）
 - 🖥️ **跨平台桌面应用**: 基于Electron的现代桌面应用程序
 - 🔧 **模块化架构**: 采用服务化设计，易于扩展和维护
@@ -35,7 +35,7 @@ AI Companion是一个创新的桌面应用程序，结合了3D虚拟角色、自
 
 - Node.js 16.x 或更高版本
 - npm 8.x 或更高版本
-- Docker (可选，用于Qdrant数据库)
+- Python 3.8+ (用于ChromaDB)
 - LM Studio (用于本地AI模型)
 
 ### 安装步骤
@@ -51,23 +51,16 @@ AI Companion是一个创新的桌面应用程序，结合了3D虚拟角色、自
    npm install
    ```
 
-3. **启动Qdrant数据库**
-   
-   有两种方式启动Qdrant数据库:
-   
-   **方式一：使用Docker (推荐)**
+3. **设置ChromaDB**
    ```bash
-   npm run start-with-db
-   ```
-   
-   **方式二：使用Node.js**
-   ```bash
-   npm run start-with-db-node
+   npm run setup-chromadb
    ```
 
 4. **启动应用**
    ```bash
    npm start
+   # 或者一步完成设置和启动
+   npm run start-with-chromadb
    ```
 
 ### 📁 项目结构（简化版）
@@ -219,7 +212,7 @@ export const THEME_CONFIG = {
 
 ### 📊 性能优化
 
-- **内存管理**: 自动降级策略（Qdrant → ChromaDB → 内存存储）
+- **内存管理**: 自动降级策略（ChromaDB → 内存存储）
 - **错误恢复**: 智能错误处理和自动重试机制
 - **日志优化**: 结构化日志，支持不同级别和颜色输出
 - **模块加载**: 按需加载，减少启动时间
@@ -234,8 +227,8 @@ export const THEME_CONFIG = {
 
 ### 📋 常见问题
 
-**Q: 启动时出现Qdrant连接错误**
-A: 项目会自动降级到ChromaDB或内存存储。检查日志了解当前使用的存储策略。
+**Q: 启动时出现ChromaDB连接错误**
+A: 项目会自动降级到内存存储。检查Python环境和ChromaDB安装，或查看日志了解当前使用的存储策略。
 
 **Q: 3D角色无法显示**
 A: 检查控制台WebGL错误，确保显卡驱动支持WebGL。项目已添加GPU兼容性参数。
@@ -265,7 +258,7 @@ A: 在`src/config/animationConfig.js`中添加动画配置，然后在动画状�
 
 - **v1.0.0** - 初始版本
   - 基础3D角色和AI对话功能
-  - Qdrant向量数据库集成
+  - ChromaDB向量数据库集成
   - 基础动画系统
 
 ### 📄 许可证
@@ -276,5 +269,5 @@ A: 在`src/config/animationConfig.js`中添加动画配置，然后在动画状�
 
 - [Three.js](https://threejs.org/) - 3D图形库
 - [Electron](https://electronjs.org/) - 跨平台桌面应用框架
-- [Qdrant](https://qdrant.tech/) - 向量数据库
+- [ChromaDB](https://www.trychroma.com/) - 向量数据库
 - [LM Studio](https://lmstudio.ai/) - 本地AI模型运行环境

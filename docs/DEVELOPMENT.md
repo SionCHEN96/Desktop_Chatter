@@ -22,10 +22,10 @@
 
 3. **启动开发环境**
    ```bash
-   # 启动Qdrant数据库
-   npm run start-with-db
-   
-   # 或者在另一个终端启动应用
+   # 设置ChromaDB环境
+   npm run setup-chromadb
+
+   # 启动应用
    npm start
    ```
 

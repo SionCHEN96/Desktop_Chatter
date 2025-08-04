@@ -107,18 +107,16 @@ AI Companion采用Electron框架构建，使用主进程-渲染进程的经典�
   - 动画状态机集成
 
 #### 1.3 智能记忆系统 (src/core/memory/)
-实现记忆存储和检索功能，支持多种存储后端的自动降级。
+实现记忆存储和检索功能，支持自动降级机制。
 
 - **架构模式**: 策略模式 + 工厂模式 + 自动降级
 - **支持的存储后端**:
-  - Qdrant向量数据库 (首选)
-  - ChromaDB向量数据库 (备选)
+  - ChromaDB向量数据库 (主要)
   - 内存存储 (降级方案)
 
 - **核心组件**:
   - `MemoryManager`: 抽象基类，定义统一接口
   - `MemoryManagerFactory`: 工厂类，自动选择最佳策略
-  - `QdrantStrategy`: Qdrant存储策略实现
   - `ChromaDBStrategy`: ChromaDB存储策略实现
   - `MemoryStrategy`: 内存存储降级实现
 
@@ -302,7 +300,7 @@ sequenceDiagram
 - **主框架**: Electron
 - **3D引擎**: Three.js
 - **模型格式**: VRM (Virtual Reality Model)
-- **向量数据库**: Qdrant
+- **向量数据库**: ChromaDB
 - **AI服务**: LM Studio (本地部署)
 - **包管理**: npm
 - **模块系统**: ES Modules
@@ -355,7 +353,7 @@ sequenceDiagram
 
 ### 1. 开发环境
 - 本地运行Electron应用
-- Docker容器运行Qdrant数据库
+- ChromaDB本地服务
 - LM Studio本地部署AI模型
 
 ### 2. 生产环境

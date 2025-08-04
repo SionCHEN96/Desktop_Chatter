@@ -106,17 +106,15 @@ export const ANIMATION_CONFIG = {
 
 // ==================== 内存配置 ====================
 export const MEMORY_CONFIG = {
-  STRATEGY: 'qdrant',
-  FALLBACK_STRATEGY: 'chroma',
+  STRATEGY: 'chromadb',
+  FALLBACK_STRATEGY: 'memory',
   MAX_MEMORIES: 1000,
   SEARCH_LIMIT: 5,
-  QDRANT: {
-    URL: 'http://localhost:6333',
-    COLLECTION: 'ai_companion_memories'
-  },
   CHROMA: {
     PATH: './data/chroma',
-    COLLECTION: 'ai_companion_memories'
+    COLLECTION: 'ai_companion_memories',
+    HOST: 'localhost',
+    PORT: 8000
   }
 };
 
