@@ -4,7 +4,7 @@
  */
 
 import axios from 'axios';
-import { LM_STUDIO_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../../config/index.js';
+import { AI_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../../config/index.js';
 import { createLogger, createError, ErrorType, ErrorSeverity } from '../../utils/index.js';
 
 const logger = createLogger('AIService');
@@ -40,18 +40,18 @@ export class AIService {
    */
   async getAIResponse(message) {
     try {
-      if (!validateUrl(LM_STUDIO_CONFIG.BASE_URL)) {
+      if (!validateUrl(AI_CONFIG.BASE_URL)) {
         throw createError(
           'Invalid API URL configuration',
           ErrorType.VALIDATION,
           ErrorSeverity.HIGH,
-          { url: LM_STUDIO_CONFIG.BASE_URL }
+          { url: AI_CONFIG.BASE_URL }
         );
       }
 
       logger.debug('Sending request to LM Studio', {
         message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
-        config: LM_STUDIO_CONFIG
+        config: AI_CONFIG
       });
 
       // 构建包含记忆的系统提示
@@ -104,14 +104,14 @@ export class AIService {
   async _sendRequest(systemPrompt, userMessage) {
     try {
       return await axios.post(
-        `${LM_STUDIO_CONFIG.BASE_URL}/v1/chat/completions`,
+        `${AI_CONFIG.BASE_URL}/v1/chat/completions`,
         {
-          model: LM_STUDIO_CONFIG.MODEL,
+          model: AI_CONFIG.MODEL,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
           ],
-          temperature: LM_STUDIO_CONFIG.TEMPERATURE,
+          temperature: AI_CONFIG.TEMPERATURE,
         },
         {
           headers: {
@@ -126,7 +126,7 @@ export class AIService {
           'Cannot connect to LM Studio API',
           ErrorType.NETWORK,
           ErrorSeverity.HIGH,
-          { url: LM_STUDIO_CONFIG.BASE_URL, code: error.code }
+          { url: AI_CONFIG.BASE_URL, code: error.code }
         );
       } else if (error.code === 'ETIMEDOUT') {
         throw createError(
