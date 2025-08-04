@@ -54,6 +54,12 @@
 public/VTS_Models/** filter=lfs diff=lfs merge=lfs -text
 public/models/** filter=lfs diff=lfs merge=lfs -text
 public/Animations/** filter=lfs diff=lfs merge=lfs -text
+# Fish Speech model files and executables
+fish-speech-test/checkpoints/** filter=lfs diff=lfs merge=lfs -text
+fish-speech-test/*.exe filter=lfs diff=lfs merge=lfs -text
+fish-speech-test/fish_speech_env/** filter=lfs diff=lfs merge=lfs -text
+# TikToken files
+*.tiktoken filter=lfs diff=lfs merge=lfs -text
 # Exclude certain files from LFS (keep as regular git files)
 *.md -filter
 *.txt -filter

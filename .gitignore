@@ -134,3 +134,25 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Fish Speech specific ignores
+# Python virtual environment
+fish-speech-test/fish_speech_env/
+# Python cache
+fish-speech-test/**/__pycache__/
+fish-speech-test/**/*.pyc
+fish-speech-test/**/*.pyo
+fish-speech-test/**/*.pyd
+# Environment files
+fish-speech-test/.env
+fish-speech-test/.env.*
+# Temporary files
+fish-speech-test/temp/
+fish-speech-test/tmp/
+# Generated files
+fish-speech-test/**/*.egg-info/
+# Hugging Face cache
+fish-speech-test/.cache/
+# Model outputs
+fish-speech-test/outputs/
+fish-speech-test/generated/
