@@ -4,7 +4,6 @@
  */
 
 export { AIService } from './aiService.js';
-export { AudioService } from './audioService.js';
 export { WindowService } from './windowService.js';
 export { IPCService } from './ipcService.js';
 export { MemoryService } from './memoryService.js';

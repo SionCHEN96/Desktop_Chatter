@@ -12,10 +12,9 @@ import fs from 'fs';
  * 封装IPC通信相关的所有操作
  */
 export class IPCService {
-  constructor(aiService, windowService, audioService) {
+  constructor(aiService, windowService) {
     this.aiService = aiService;
     this.windowService = windowService;
-    this.audioService = audioService;
     this.setupIPCHandlers();
   }
 
@@ -29,23 +28,6 @@ export class IPCService {
       try {
         console.log('[IPCService] Received message:', message);
         const response = await this.aiService.getAIResponse(message);
-
-        // 生成语音（异步进行，不阻塞响应）
-        if (this.audioService) {
-          this.audioService.generateSpeechForResponse(response)
-            .then(audioPath => {
-              if (audioPath) {
-                console.log('[IPCService] Speech generated:', audioPath);
-                // 发送音频路径到渲染进程，确保使用正确的格式
-                const webPath = audioPath.replace(/\\/g, '/');
-                console.log('[IPCService] Sending audio path to renderer:', webPath);
-                event.reply('audio-generated', webPath);
-              }
-            })
-            .catch(error => {
-              console.error('[IPCService] Failed to generate speech:', error);
-            });
-        }
 
         event.reply('response', response);
       } catch (error) {
@@ -99,36 +81,7 @@ export class IPCService {
       };
     });
 
-    // 处理获取音频文件的绝对路径
-    ipcMain.handle('get-audio-file-path', (event, relativePath) => {
-      try {
-        // 构建绝对路径
-        let fullPath;
-        if (relativePath.startsWith('generated_audio/')) {
-          fullPath = path.join(process.cwd(), 'public', relativePath);
-        } else if (relativePath.startsWith('public/')) {
-          fullPath = path.join(process.cwd(), relativePath);
-        } else {
-          fullPath = path.join(process.cwd(), 'public', 'generated_audio', relativePath);
-        }
 
-        console.log('[IPCService] Checking audio file path:', fullPath);
-
-        // 检查文件是否存在
-        if (fs.existsSync(fullPath)) {
-          // 返回file://协议的URL
-          const fileUrl = `file:///${fullPath.replace(/\\/g, '/')}`;
-          console.log('[IPCService] Audio file path resolved:', fileUrl);
-          return fileUrl;
-        } else {
-          console.error('[IPCService] Audio file not found:', fullPath);
-          return null;
-        }
-      } catch (error) {
-        console.error('[IPCService] Error resolving audio file path:', error);
-        return null;
-      }
-    });
 
     // 处理获取窗口状态
     ipcMain.handle('get-window-state', () => {
