@@ -88,17 +88,24 @@
     position: fixed;
     bottom: 20px;
     left: 20px;
-    width: 320px; /* 固定宽度，更紧凑 */
+    width: 320px;
+    /* 固定宽度，更紧凑 */
     display: flex;
-    padding: 8px 12px; /* 减小内边距 */
+    padding: 8px 12px;
+    /* 减小内边距 */
     -webkit-app-region: no-drag;
     z-index: 45;
-    background: rgba(255, 240, 245, 0.95); /* 更温柔的粉色背景 */
-    border-radius: 20px; /* 稍微减小圆角 */
-    box-shadow: 0 4px 20px rgba(255, 182, 193, 0.4); /* 柔和阴影 */
+    background: rgba(255, 240, 245, 0.95);
+    /* 更温柔的粉色背景 */
+    border-radius: 20px;
+    /* 稍微减小圆角 */
+    box-shadow: 0 4px 20px rgba(255, 182, 193, 0.4);
+    /* 柔和阴影 */
     backdrop-filter: blur(8px);
-    border: 1.5px solid rgba(255, 192, 203, 0.6); /* 可爱的粉色边框 */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 更流畅的动画 */
+    border: 1.5px solid rgba(255, 192, 203, 0.6);
+    /* 可爱的粉色边框 */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 更流畅的动画 */
     opacity: 1;
     transform: translateY(0);
 }
@@ -106,7 +113,8 @@
 /* 折叠状态的聊天表单 */
 .chat-form.collapsed {
     opacity: 0;
-    transform: translateY(60px) scale(0.9); /* 向下移动并缩小 */
+    transform: translateY(60px) scale(0.9);
+    /* 向下移动并缩小 */
     pointer-events: none;
 }
 
@@ -120,6 +128,7 @@
         opacity: 0;
         transform: translateY(60px) scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -134,9 +143,12 @@
 
 /* 按钮可爱的脉冲动画 */
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.05);
     }
@@ -148,57 +160,80 @@
 
 #message-input {
     flex: 1;
-    padding: 10px 16px; /* 减小内边距 */
+    padding: 10px 16px;
+    /* 减小内边距 */
     border: none;
-    border-radius: 16px; /* 稍微减小圆角 */
+    border-radius: 16px;
+    /* 稍微减小圆角 */
     outline: none;
-    background: rgba(255, 255, 255, 0.7); /* 半透明白色背景 */
+    background: rgba(255, 255, 255, 0.7);
+    /* 半透明白色背景 */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 14px; /* 稍微减小字体 */
-    color: #444; /* 稍微深一点的颜色 */
+    font-size: 14px;
+    /* 稍微减小字体 */
+    color: #444;
+    /* 稍微深一点的颜色 */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 182, 193, 0.3); /* 添加淡粉色边框 */
+    border: 1px solid rgba(255, 182, 193, 0.3);
+    /* 添加淡粉色边框 */
 }
 
 #message-input:focus {
-    background: rgba(255, 255, 255, 0.9); /* 焦点时更明亮 */
-    border-color: rgba(255, 105, 180, 0.6); /* 焦点时粉色边框 */
-    box-shadow: 0 0 0 2px rgba(255, 182, 193, 0.3); /* 可爱的焦点光晕 */
-    transform: scale(1.02); /* 轻微放大效果 */
+    background: rgba(255, 255, 255, 0.9);
+    /* 焦点时更明亮 */
+    border-color: rgba(255, 105, 180, 0.6);
+    /* 焦点时粉色边框 */
+    box-shadow: 0 0 0 2px rgba(255, 182, 193, 0.3);
+    /* 可爱的焦点光晕 */
+    transform: scale(1.02);
+    /* 轻微放大效果 */
 }
 
 #message-input::placeholder {
-    color: rgba(255, 105, 180, 0.7); /* 粉色占位符 */
-    font-style: italic; /* 斜体更可爱 */
+    color: rgba(255, 105, 180, 0.7);
+    /* 粉色占位符 */
+    font-style: italic;
+    /* 斜体更可爱 */
 }
 
 .chat-form button {
-    padding: 8px 16px; /* 减小按钮尺寸 */
+    padding: 8px 16px;
+    /* 减小按钮尺寸 */
     border: none;
-    border-radius: 16px; /* 匹配输入框圆角 */
+    border-radius: 16px;
+    /* 匹配输入框圆角 */
     background: linear-gradient(135deg, #ff69b4, #ff1493);
     color: white;
     cursor: pointer;
     -webkit-app-region: no-drag;
-    font-weight: 500; /* 稍微减轻字重 */
+    font-weight: 500;
+    /* 稍微减轻字重 */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 13px; /* 减小字体 */
-    box-shadow: 0 2px 8px rgba(255, 105, 180, 0.4); /* 柔和阴影 */
+    font-size: 13px;
+    /* 减小字体 */
+    box-shadow: 0 2px 8px rgba(255, 105, 180, 0.4);
+    /* 柔和阴影 */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    min-width: 60px; /* 最小宽度 */
-    margin-left: 8px; /* 与输入框的间距 */
+    min-width: 60px;
+    /* 最小宽度 */
+    margin-left: 8px;
+    /* 与输入框的间距 */
 }
 
 .chat-form button:hover {
-    background: linear-gradient(135deg, #ff1493, #ff69b4); /* 反转渐变 */
-    transform: translateY(-1px) scale(1.05); /* 轻微上移和放大 */
-    box-shadow: 0 4px 16px rgba(255, 105, 180, 0.5); /* 增强粉色阴影 */
+    background: linear-gradient(135deg, #ff1493, #ff69b4);
+    /* 反转渐变 */
+    transform: translateY(-1px) scale(1.05);
+    /* 轻微上移和放大 */
+    box-shadow: 0 4px 16px rgba(255, 105, 180, 0.5);
+    /* 增强粉色阴影 */
 }
 
 .chat-form button:active {
-    transform: translateY(0) scale(0.98); /* 按下效果 */
+    transform: translateY(0) scale(0.98);
+    /* 按下效果 */
     box-shadow: 0 2px 8px rgba(255, 105, 180, 0.3);
 }
 
@@ -241,7 +276,7 @@
 
 /* AI消息气泡样式 - 定位在角色脸部右侧 */
 .ai-message-bubble {
-    animation: bubbleAppear 0.5s ease-out forwards;
+    animation: bubbleAppear 0.5s ease-out forwards, bubbleFloat 2s ease-in-out infinite 0.5s;
     background: linear-gradient(135deg, rgba(255, 158, 201, 0.95) 0%, rgba(255, 182, 193, 0.95) 100%);
     color: white;
     padding: 15px 20px;
@@ -272,13 +307,25 @@
 
 /* AI气泡消失状态 */
 .ai-message-bubble.disappearing {
-    animation: bubbleDisappear 0.4s ease-in forwards;
+    animation: bubbleFadeOut 0.5s ease-out forwards;
 }
 
-/* AI气泡悬停效果 */
+/* AI气泡悬停效果 - 停止浮动动画，保持稳定 */
 .ai-message-bubble:hover {
-    animation: bubbleBounce 0.6s ease-in-out infinite;
+    animation: none !important;
     box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
+    transform: translateY(0) scale(1) !important;
+}
+
+/* AI气泡悬停后状态 - 不再有出现动画 */
+.ai-message-bubble.hovered {
+    animation: bubbleFloat 2s ease-in-out infinite;
+}
+
+/* 确保悬停状态优先级最高 */
+.ai-message-bubble.hovered:hover {
+    animation: none !important;
+    transform: translateY(0) scale(1) !important;
 }
 
 /* AI消息气泡的小尾巴 - 指向左侧角色 */
@@ -396,26 +443,28 @@ body {
     }
 }
 
-/* AI气泡消失动画 */
-@keyframes bubbleDisappear {
+/* AI气泡淡出消失动画 */
+@keyframes bubbleFadeOut {
     0% {
         opacity: 1;
         transform: scale(1) translateY(0);
-        filter: blur(0);
+        filter: blur(0px);
     }
 
     50% {
         opacity: 0.5;
-        transform: scale(0.9) translateY(-10px);
-        filter: blur(2px);
+        transform: scale(0.95) translateY(-5px);
+        filter: blur(1px);
     }
 
     100% {
         opacity: 0;
-        transform: scale(0.3) translateY(-30px);
-        filter: blur(5px);
+        transform: scale(0.8) translateY(-15px);
+        filter: blur(3px);
     }
 }
+
+
 
 /* 气泡弹跳动画 */
 @keyframes bubbleBounce {
@@ -427,6 +476,27 @@ body {
 
     50% {
         transform: translateY(-3px) scale(1.02);
+    }
+}
+
+/* 气泡可爱浮动动画 */
+@keyframes bubbleFloat {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    25% {
+        transform: translateY(-4px);
+    }
+
+    50% {
+        transform: translateY(-2px);
+    }
+
+    75% {
+        transform: translateY(-6px);
     }
 }
 

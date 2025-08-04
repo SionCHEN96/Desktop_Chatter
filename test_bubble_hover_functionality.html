@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI气泡悬停功能测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+
+        .test-section h3 {
+            color: #555;
+            margin-top: 0;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #ff9ec3 0%, #ffb6c1 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.3);
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.4);
+        }
+
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #2196f3;
+        }
+
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .status.warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left: 4px solid #ff9800;
+        }
+
+        .chat-container {
+            position: relative;
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        /* 引入AI气泡样式 */
+        .ai-message-bubble {
+            animation: bubbleAppear 0.5s ease-out forwards, bubbleFloat 2s ease-in-out infinite 0.5s;
+            background: linear-gradient(135deg, rgba(255, 158, 201, 0.95) 0%, rgba(255, 182, 193, 0.95) 100%);
+            color: white;
+            padding: 15px 20px;
+            margin: 0;
+            border-radius: 20px 20px 20px 5px;
+            width: auto;
+            min-width: 200px;
+            max-width: 350px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
+            position: fixed;
+            top: 60px;
+            left: 40vw;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: left;
+            box-sizing: border-box;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            font-weight: 400;
+            height: auto;
+            min-height: 60px;
+            transform-origin: top left;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .ai-message-bubble.disappearing {
+            animation: bubbleDisappear 0.4s ease-in forwards;
+        }
+
+        .ai-message-bubble:hover {
+            animation: none !important;
+            box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
+            transform: translateY(0) scale(1) !important;
+        }
+
+        .ai-message-bubble.hovered {
+            animation: bubbleFloat 2s ease-in-out infinite;
+        }
+
+        .ai-message-bubble.hovered:hover {
+            animation: none !important;
+            transform: translateY(0) scale(1) !important;
+        }
+
+        .ai-message-bubble::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 25px;
+            width: 0;
+            height: 0;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-right: 12px solid rgba(255, 158, 201, 0.95);
+            filter: drop-shadow(0 2px 4px rgba(255, 105, 180, 0.3));
+        }
+
+        @keyframes bubbleAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) translateY(-20px);
+                filter: blur(5px);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.1) translateY(-5px);
+                filter: blur(1px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                filter: blur(0);
+            }
+        }
+
+        @keyframes bubbleDisappear {
+            0% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                filter: blur(0);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.9) translateY(-10px);
+                filter: blur(2px);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.3) translateY(-30px);
+                filter: blur(5px);
+            }
+        }
+
+        @keyframes bubbleFloat {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            25% {
+                transform: translateY(-4px);
+            }
+
+            50% {
+                transform: translateY(-2px);
+            }
+
+            75% {
+                transform: translateY(-6px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>🎈 AI气泡悬停功能测试</h1>
+
+        <div class="test-section">
+            <h3>📋 测试说明</h3>
+            <p>本页面用于测试AI回复气泡的新功能：</p>
+            <ul>
+                <li>✨ <strong>可爱浮动效果</strong>：气泡会有轻微的上下晃动动画</li>
+                <li>🖱️ <strong>悬停稳定</strong>：鼠标悬停时气泡停止浮动，保持稳定</li>
+                <li>⏸️ <strong>暂停倒计时</strong>：悬停时暂停10秒消失倒计时</li>
+                <li>▶️ <strong>恢复倒计时</strong>：鼠标移出后继续剩余的消失倒计时</li>
+                <li>🎭 <strong>动画优化</strong>：鼠标移出后不再播放出现动画</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 功能测试</h3>
+            <button class="test-button" onclick="testFloatingEffect()">测试浮动效果</button>
+            <button class="test-button" onclick="testHoverPause()">测试悬停暂停</button>
+            <button class="test-button" onclick="testMultipleHover()">测试多次悬停</button>
+            <button class="test-button" onclick="testLongText()">测试长文本</button>
+            <button class="test-button" onclick="clearBubble()">清除气泡</button>
+
+            <div id="test-status"></div>
+        </div>
+
+        <div class="chat-container" id="chat-container">
+            <!-- AI气泡将在这里显示 -->
+        </div>
+    </div>
+
+    <script type="module">
+        // 模拟MessageManager的简化版本
+        class TestMessageManager {
+            constructor(container) {
+                this.container = container;
+                this.currentAIMessage = null;
+                this.aiMessageTimeout = null;
+                this.aiMessageTimeoutStartTime = null;
+                this.aiMessageTimeoutDuration = 10000;
+                this.aiMessageTimeoutRemaining = 10000;
+                this.isHovered = false;
+            }
+
+            addAIMessage(text) {
+                this.clearCurrentAIMessage();
+
+                const messageElement = document.createElement('div');
+                messageElement.className = 'ai-message-bubble';
+                messageElement.textContent = text;
+
+                messageElement.addEventListener('mouseenter', () => this.handleMouseEnter());
+                messageElement.addEventListener('mouseleave', () => this.handleMouseLeave());
+
+                this.currentAIMessage = messageElement;
+                document.body.appendChild(messageElement);
+
+                this.startAIMessageTimeout();
+            }
+
+            clearCurrentAIMessage() {
+                if (this.aiMessageTimeout) {
+                    clearTimeout(this.aiMessageTimeout);
+                    this.aiMessageTimeout = null;
+                }
+
+                if (this.currentAIMessage) {
+                    this.currentAIMessage.classList.add('disappearing');
+                    setTimeout(() => {
+                        if (this.currentAIMessage && this.currentAIMessage.parentNode) {
+                            this.currentAIMessage.parentNode.removeChild(this.currentAIMessage);
+                        }
+                        this.currentAIMessage = null;
+                    }, 400);
+                }
+            }
+
+            startAIMessageTimeout() {
+                this.aiMessageTimeoutStartTime = Date.now();
+                this.aiMessageTimeoutRemaining = this.aiMessageTimeoutDuration;
+                this.isHovered = false;
+
+                this.aiMessageTimeout = setTimeout(() => {
+                    if (!this.isHovered) {
+                        this.clearCurrentAIMessage();
+                    }
+                }, this.aiMessageTimeoutDuration);
+            }
+
+            pauseAIMessageTimeout() {
+                if (this.aiMessageTimeout) {
+                    clearTimeout(this.aiMessageTimeout);
+                    this.aiMessageTimeout = null;
+
+                    const elapsed = Date.now() - this.aiMessageTimeoutStartTime;
+                    this.aiMessageTimeoutRemaining = Math.max(0, this.aiMessageTimeoutDuration - elapsed);
+                }
+            }
+
+            resumeAIMessageTimeout() {
+                if (this.aiMessageTimeoutRemaining > 0) {
+                    this.aiMessageTimeoutStartTime = Date.now();
+                    this.aiMessageTimeout = setTimeout(() => {
+                        if (!this.isHovered) {
+                            this.clearCurrentAIMessage();
+                        }
+                    }, this.aiMessageTimeoutRemaining);
+                }
+            }
+
+            handleMouseEnter() {
+                this.isHovered = true;
+                this.pauseAIMessageTimeout();
+                showStatus('悬停检测：已暂停消失倒计时 ⏸️', 'info');
+            }
+
+            handleMouseLeave() {
+                this.isHovered = false;
+
+                if (this.currentAIMessage) {
+                    this.currentAIMessage.classList.add('hovered');
+                }
+
+                this.resumeAIMessageTimeout();
+                showStatus('离开检测：已恢复消失倒计时 ▶️', 'warning');
+            }
+        }
+
+        const messageManager = new TestMessageManager(document.getElementById('chat-container'));
+
+        window.testFloatingEffect = function () {
+            messageManager.addAIMessage('你好！我是AI助手，这个气泡会有可爱的浮动效果哦~ 🎈');
+            showStatus('✨ 浮动效果测试：气泡已显示，观察上下晃动动画', 'success');
+        };
+
+        window.testHoverPause = function () {
+            messageManager.addAIMessage('请将鼠标悬停在我身上，我会停止浮动并暂停消失倒计时！');
+            showStatus('🖱️ 悬停测试：请将鼠标悬停在气泡上观察效果', 'info');
+        };
+
+        window.testMultipleHover = function () {
+            messageManager.addAIMessage('🔄 多次悬停测试：请反复悬停和移出鼠标，每次悬停我都应该完全停止晃动！');
+            showStatus('🔄 多次悬停测试：请反复悬停和移出鼠标多次，验证每次悬停都能完全停止晃动', 'warning');
+        };
+
+        window.testLongText = function () {
+            const longText = `这是一个很长的测试文本，用来测试AI气泡的各种功能。包括：
+1. 可爱的浮动动画效果
+2. 鼠标悬停时的稳定状态
+3. 智能的倒计时暂停和恢复
+4. 优化的动画切换逻辑
+请尝试悬停和移出鼠标来体验完整功能！`;
+            messageManager.addAIMessage(longText);
+            showStatus('📝 长文本测试：测试复杂内容的显示效果', 'success');
+        };
+
+        window.clearBubble = function () {
+            messageManager.clearCurrentAIMessage();
+            showStatus('🧹 已清除当前气泡', 'info');
+        };
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('test-status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // 初始化测试
+        showStatus('🚀 测试环境已准备就绪，点击按钮开始测试！', 'info');
+    </script>
+</body>
+
+</html>

@@ -10,6 +10,10 @@ export class MessageManager {
     this.maxMessages = 100; // 最大消息数量
     this.currentAIMessage = null; // 当前显示的AI消息元素
     this.aiMessageTimeout = null; // AI消息自动消失定时器
+    this.aiMessageTimeoutStartTime = null; // 定时器开始时间
+    this.aiMessageTimeoutDuration = 10000; // 10秒
+    this.aiMessageTimeoutRemaining = 10000; // 剩余时间
+    this.isHovered = false; // 是否悬停状态
 
     this.initContainer();
   }
@@ -84,9 +88,7 @@ export class MessageManager {
     this.renderAIMessage(message);
 
     // 设置10秒后自动消失
-    this.aiMessageTimeout = setTimeout(() => {
-      this.clearCurrentAIMessage();
-    }, 10000);
+    this.startAIMessageTimeout();
 
     return message;
   }
@@ -207,7 +209,7 @@ export class MessageManager {
           this.currentAIMessage.parentNode.removeChild(this.currentAIMessage);
         }
         this.currentAIMessage = null;
-      }, 400); // 与bubbleDisappear动画时长一致
+      }, 500); // 与bubbleFadeOut动画时长一致
     }
   }
 
@@ -219,6 +221,10 @@ export class MessageManager {
   renderAIMessage(message) {
     const messageElement = this.createMessageElement(message);
     messageElement.classList.add('ai-message-bubble');
+
+    // 添加鼠标事件监听器
+    messageElement.addEventListener('mouseenter', () => this.handleMouseEnter());
+    messageElement.addEventListener('mouseleave', () => this.handleMouseLeave());
 
     // 设置为当前AI消息
     this.currentAIMessage = messageElement;
@@ -265,5 +271,75 @@ export class MessageManager {
    */
   getMessagesByType(type) {
     return this.messages.filter(message => message.type === type);
+  }
+
+  /**
+   * 开始AI消息定时器
+   * @private
+   */
+  startAIMessageTimeout() {
+    this.aiMessageTimeoutStartTime = Date.now();
+    this.aiMessageTimeoutRemaining = this.aiMessageTimeoutDuration;
+    this.isHovered = false;
+
+    this.aiMessageTimeout = setTimeout(() => {
+      if (!this.isHovered) {
+        this.clearCurrentAIMessage();
+      }
+    }, this.aiMessageTimeoutDuration);
+  }
+
+  /**
+   * 暂停AI消息定时器
+   * @private
+   */
+  pauseAIMessageTimeout() {
+    if (this.aiMessageTimeout) {
+      clearTimeout(this.aiMessageTimeout);
+      this.aiMessageTimeout = null;
+
+      // 计算剩余时间
+      const elapsed = Date.now() - this.aiMessageTimeoutStartTime;
+      this.aiMessageTimeoutRemaining = Math.max(0, this.aiMessageTimeoutDuration - elapsed);
+    }
+  }
+
+  /**
+   * 恢复AI消息定时器
+   * @private
+   */
+  resumeAIMessageTimeout() {
+    if (this.aiMessageTimeoutRemaining > 0) {
+      this.aiMessageTimeoutStartTime = Date.now();
+      this.aiMessageTimeout = setTimeout(() => {
+        if (!this.isHovered) {
+          this.clearCurrentAIMessage();
+        }
+      }, this.aiMessageTimeoutRemaining);
+    }
+  }
+
+  /**
+   * 处理鼠标进入事件
+   * @private
+   */
+  handleMouseEnter() {
+    this.isHovered = true;
+    this.pauseAIMessageTimeout();
+  }
+
+  /**
+   * 处理鼠标离开事件
+   * @private
+   */
+  handleMouseLeave() {
+    this.isHovered = false;
+
+    // 添加hovered类，移除出现动画
+    if (this.currentAIMessage) {
+      this.currentAIMessage.classList.add('hovered');
+    }
+
+    this.resumeAIMessageTimeout();
   }
 }
