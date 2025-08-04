@@ -130,15 +130,28 @@ export const RENDERING_CONFIG = {
     ADAPTIVE_QUALITY: true
   },
   CAMERA: {
-    FOV: 45,
-    NEAR: 0.1,
-    FAR: 1000,
-    POSITION: { x: 0, y: 1.6, z: 3 }
+    fov: 45,
+    near: 0.1,
+    far: 1000,
+    position: [0, 1.6, 3],
+    target: [0, 1, 0]
   },
   LIGHTING: {
     AMBIENT_INTENSITY: 0.4,
     DIRECTIONAL_INTENSITY: 0.8,
     DIRECTIONAL_POSITION: { x: 5, y: 10, z: 5 }
+  },
+  RENDERER: {
+    antialias: true,
+    powerPreference: 'high-performance',
+    alpha: true,
+    stencil: false,
+    depth: true,
+    logarithmicDepthBuffer: false,
+    toneMappingExposure: 1.0,
+    shadowMap: {
+      enabled: true
+    }
   }
 };
 

@@ -14,7 +14,14 @@ import { GammaCorrectionShader } from 'three/examples/jsm/shaders/GammaCorrectio
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 import { AntiAliasing } from './AntiAliasing.js';
-import { POST_PROCESSING_CONFIG } from '../../config/renderConfig.js';
+import { RENDERING_CONFIG } from '../../config/index.js';
+
+// 使用默认的后处理配置
+const POST_PROCESSING_CONFIG = {
+  ssao: { enabled: true },
+  bloom: { enabled: true },
+  fxaa: { enabled: true }
+};
 
 export class PostProcessing {
   constructor(renderer, scene, camera) {

@@ -4,13 +4,18 @@
  */
 
 import * as THREE from 'three';
-import { 
-  RENDERER_CONFIG, 
-  PBR_MATERIAL_CONFIG, 
-  LIGHTING_CONFIG, 
-  CAMERA_CONFIG,
-  PERFORMANCE_CONFIG
-} from '../../config/renderConfig.js';
+import { RENDERING_CONFIG } from '../../config/index.js';
+
+// 解构渲染配置
+const {
+  ANTIALIAS,
+  SHADOWS,
+  QUALITY,
+  PERFORMANCE,
+  CAMERA,
+  LIGHTING,
+  RENDERER
+} = RENDERING_CONFIG;
 
 export class SimpleHighQualityRenderer {
   constructor(container) {
@@ -56,14 +61,14 @@ export class SimpleHighQualityRenderer {
     const height = this.container.clientHeight;
     
     this.camera = new THREE.PerspectiveCamera(
-      CAMERA_CONFIG.fov,
+      CAMERA.fov,
       width / height,
-      CAMERA_CONFIG.near,
-      CAMERA_CONFIG.far
+      CAMERA.near,
+      CAMERA.far
     );
-    
-    this.camera.position.set(...CAMERA_CONFIG.position);
-    this.camera.lookAt(...CAMERA_CONFIG.target);
+
+    this.camera.position.set(...CAMERA.position);
+    this.camera.lookAt(...CAMERA.target);
   }
 
   /**
@@ -74,24 +79,24 @@ export class SimpleHighQualityRenderer {
     const height = this.container.clientHeight;
     
     this.renderer = new THREE.WebGLRenderer({
-      antialias: RENDERER_CONFIG.antialias,
-      powerPreference: RENDERER_CONFIG.powerPreference,
-      alpha: RENDERER_CONFIG.alpha,
-      stencil: RENDERER_CONFIG.stencil,
-      depth: RENDERER_CONFIG.depth,
-      logarithmicDepthBuffer: RENDERER_CONFIG.logarithmicDepthBuffer
+      antialias: RENDERER.antialias,
+      powerPreference: RENDERER.powerPreference,
+      alpha: RENDERER.alpha,
+      stencil: RENDERER.stencil,
+      depth: RENDERER.depth,
+      logarithmicDepthBuffer: RENDERER.logarithmicDepthBuffer
     });
-    
+
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    
+
     // 色彩空间和色调映射
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = RENDERER_CONFIG.toneMappingExposure;
-    
+    this.renderer.toneMappingExposure = RENDERER.toneMappingExposure;
+
     // 阴影设置
-    this.renderer.shadowMap.enabled = RENDERER_CONFIG.shadowMap.enabled;
+    this.renderer.shadowMap.enabled = RENDERER.shadowMap.enabled;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     // 其他高质量设置

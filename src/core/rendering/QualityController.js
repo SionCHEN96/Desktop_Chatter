@@ -3,7 +3,10 @@
  * 根据设备性能自动调整渲染质量
  */
 
-import { PERFORMANCE_CONFIG } from '../../config/renderConfig.js';
+import { RENDERING_CONFIG } from '../../config/index.js';
+
+// 使用渲染配置中的性能设置
+const PERFORMANCE_CONFIG = RENDERING_CONFIG.PERFORMANCE;
 
 export class QualityController {
   constructor(renderer, postProcessing) {

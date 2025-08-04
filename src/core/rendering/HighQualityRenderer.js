@@ -7,15 +7,17 @@ import * as THREE from 'three';
 import { PostProcessing } from './PostProcessing.js';
 import { EnvironmentLoader } from './EnvironmentLoader.js';
 import { QualityController } from './QualityController.js';
-import {
-  RENDERER_CONFIG,
-  PBR_MATERIAL_CONFIG,
-  LIGHTING_CONFIG,
-  POST_PROCESSING_CONFIG,
-  CAMERA_CONFIG,
-  PERFORMANCE_CONFIG,
-  ENVIRONMENT_CONFIG
-} from '../../config/renderConfig.js';
+import { RENDERING_CONFIG } from '../../config/index.js';
+
+// 解构渲染配置
+const {
+  ANTIALIAS,
+  SHADOWS,
+  QUALITY,
+  PERFORMANCE,
+  CAMERA,
+  LIGHTING
+} = RENDERING_CONFIG;
 
 export class HighQualityRenderer {
   constructor(container) {
