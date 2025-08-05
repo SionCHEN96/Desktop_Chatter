@@ -67,6 +67,8 @@ export const UI_CONFIG = {
     frame: false,
     alwaysOnTop: true,
     resizable: false,
+    show: false,  // 启动时不显示窗口
+    skipTaskbar: true,  // 不在任务栏显示
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

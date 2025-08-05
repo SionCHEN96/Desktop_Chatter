@@ -59,7 +59,9 @@ export class SimpleHighQualityRenderer {
    */
   createScene() {
     this.scene = new THREE.Scene();
-    this.scene.background = null; // 透明背景
+    this.scene.background = null; // 完全透明背景
+    this.scene.backgroundBlurriness = 0;
+    this.scene.backgroundIntensity = 0;
   }
 
   /**
@@ -86,14 +88,16 @@ export class SimpleHighQualityRenderer {
   createRenderer() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
-    
+
     this.renderer = new THREE.WebGLRenderer({
       antialias: RENDERER.antialias,
       powerPreference: RENDERER.powerPreference,
-      alpha: RENDERER.alpha,
+      alpha: true,  // 强制启用alpha通道
       stencil: RENDERER.stencil,
       depth: RENDERER.depth,
-      logarithmicDepthBuffer: RENDERER.logarithmicDepthBuffer
+      logarithmicDepthBuffer: RENDERER.logarithmicDepthBuffer,
+      preserveDrawingBuffer: false,
+      premultipliedAlpha: false
     });
 
     this.renderer.setSize(width, height);
@@ -107,13 +111,19 @@ export class SimpleHighQualityRenderer {
     // 阴影设置
     this.renderer.shadowMap.enabled = RENDERER.shadowMap.enabled;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
+
     // 其他高质量设置
     this.renderer.useLegacyLights = false;
-    this.renderer.setClearColor(0x000000, 0);
-    this.renderer.setClearAlpha(0);
-    
-    this.container.appendChild(this.renderer.domElement);
+    // 完全透明的背景
+    this.renderer.setClearColor(0x000000, 0);  // 黑色，完全透明
+    this.renderer.setClearAlpha(0);  // 完全透明
+
+    // 确保canvas样式也是透明的
+    const canvas = this.renderer.domElement;
+    canvas.style.background = 'transparent';
+    canvas.style.backgroundColor = 'transparent';
+
+    this.container.appendChild(canvas);
   }
 
   /**

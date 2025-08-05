@@ -25,17 +25,21 @@ html, body {
     align-items: flex-end;
     pointer-events: auto;
     /* 启用鼠标事件以支持拖拽功能 */
-    border: none;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     overflow: visible;
     /* 允许内容在容器外显示 */
     /* 允许内容溢出显示，确保腿部可见 */
-    background: transparent;  /* 确保背景透明 */
+    background: transparent !important;  /* 强制确保背景透明 */
+    background-color: transparent !important;
+    background-image: none !important;
 }
 
 /* 角色容器内的canvas样式 */
 #character-container canvas {
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
     display: block;
     /* 确保canvas不会被裁剪 */
     overflow: visible;
@@ -43,13 +47,20 @@ html, body {
     pointer-events: auto;
     /* 移除任何可能的变换限制 */
     transform: none;
-    background: transparent;  /* 确保canvas背景透明 */
+    background: transparent !important;  /* 强制确保canvas背景透明 */
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* 可爱的粉色消息按钮 - 位于红框左侧，不遮挡面部 */
 .toggle-chat-button {
     position: fixed;
-    top: 165px;  /* 再往下移动30px */
+    top: 200px;  /* 下调35px，从165px调整到200px */
     left: calc(15vw - 45px);  /* 往左移动20px */
     width: 50px;
     height: 50px;
@@ -299,7 +310,7 @@ html, body {
     line-height: 1.5;
     box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
     position: fixed;
-    top: 140px;  /* 再往下移动40px */
+    top: 180px;  /* 下调40px，从140px调整到180px */
     left: calc(40vw + 30px);  /* 往右移动30px */
     border: 2px solid rgba(255, 255, 255, 0.3);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -392,30 +403,49 @@ body {
     -webkit-app-region: no-drag;
     overflow: visible;
     /* 关键：允许子元素溢出显示 */
-    background: transparent;  /* 确保背景透明 */
+    background: transparent !important;  /* 强制确保背景透明 */
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* 左侧面板：3D模型容器 */
 .left-panel {
     flex: 1;
     position: relative;
-    background: transparent;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: visible;
     /* 关键：允许3D模型内容溢出显示 */
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* 右侧面板：AI回复气泡容器 */
 .right-panel {
     flex: 1;
     position: relative;
-    background: transparent;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 
