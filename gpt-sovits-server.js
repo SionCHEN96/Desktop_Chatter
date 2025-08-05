@@ -34,6 +34,189 @@ app.use((req, res, next) => {
 // 静态文件服务
 app.use(express.static('public'));
 
+// 文本切分函数
+function splitText(text, maxLength = 10) {
+    console.log(`[DEBUG] Original text: "${text}", length: ${text.length}`);
+
+    // 如果文本很短，直接返回
+    if (text.length <= maxLength) {
+        return [text];
+    }
+
+    // 按标点符号切分
+    const sentences = text.split(/[。！？；，\.\!\?\;\,]/).filter(s => s.trim().length > 0);
+    console.log(`[DEBUG] Split by punctuation:`, sentences);
+
+    const chunks = [];
+    let currentChunk = '';
+
+    for (const sentence of sentences) {
+        const trimmedSentence = sentence.trim();
+        if (!trimmedSentence) continue;
+
+        // 如果当前句子本身就超过最大长度，需要进一步切分
+        if (trimmedSentence.length > maxLength) {
+            // 先保存当前块
+            if (currentChunk) {
+                chunks.push(currentChunk.trim());
+                currentChunk = '';
+            }
+
+            // 按字符强制切分长句子
+            for (let i = 0; i < trimmedSentence.length; i += maxLength) {
+                const chunk = trimmedSentence.substring(i, i + maxLength);
+                if (chunk.trim()) {
+                    chunks.push(chunk.trim());
+                }
+            }
+        } else if (currentChunk.length + trimmedSentence.length <= maxLength) {
+            // 可以添加到当前块
+            currentChunk += (currentChunk ? '' : '') + trimmedSentence;
+        } else {
+            // 当前块已满，开始新块
+            if (currentChunk) {
+                chunks.push(currentChunk.trim());
+            }
+            currentChunk = trimmedSentence;
+        }
+    }
+
+    // 添加最后一块
+    if (currentChunk) {
+        chunks.push(currentChunk.trim());
+    }
+
+    // 如果没有有效的块，按字符强制切分
+    if (chunks.length === 0) {
+        for (let i = 0; i < text.length; i += maxLength) {
+            const chunk = text.substring(i, i + maxLength);
+            if (chunk.trim()) {
+                chunks.push(chunk.trim());
+            }
+        }
+    }
+
+    console.log(`[DEBUG] Final chunks:`, chunks);
+    return chunks;
+}
+
+// 音频合并函数（简单的WAV文件合并）
+function mergeWavBuffers(buffers) {
+    if (buffers.length === 0) return null;
+    if (buffers.length === 1) return buffers[0];
+
+    // 解析第一个WAV文件的头部信息
+    const firstBuffer = buffers[0];
+    const header = firstBuffer.slice(0, 44); // WAV头部通常是44字节
+
+    // 提取音频数据（跳过头部）
+    const audioDataBuffers = buffers.map(buffer => buffer.slice(44));
+
+    // 计算总的音频数据长度
+    const totalAudioLength = audioDataBuffers.reduce((sum, buffer) => sum + buffer.length, 0);
+
+    // 创建新的合并缓冲区
+    const mergedBuffer = Buffer.alloc(44 + totalAudioLength);
+
+    // 复制头部
+    header.copy(mergedBuffer, 0);
+
+    // 更新文件大小信息
+    const totalFileSize = 36 + totalAudioLength;
+    mergedBuffer.writeUInt32LE(totalFileSize, 4); // 文件大小
+    mergedBuffer.writeUInt32LE(totalAudioLength, 40); // 数据块大小
+
+    // 合并音频数据
+    let offset = 44;
+    for (const audioBuffer of audioDataBuffers) {
+        audioBuffer.copy(mergedBuffer, offset);
+        offset += audioBuffer.length;
+    }
+
+    return mergedBuffer;
+}
+
+// 单段文本合成
+async function synthesizeSingleChunk(text, characterConfig, options) {
+    // 构建请求参数
+    const params = {
+        text: text.trim(),
+        text_lang: options.text_lang || DEFAULT_PARAMS.text_lang,
+        ref_audio_path: characterConfig.refAudio,
+        prompt_text: characterConfig.refText,
+        prompt_lang: characterConfig.language,
+        top_k: options.top_k || DEFAULT_PARAMS.top_k,
+        top_p: options.top_p || DEFAULT_PARAMS.top_p,
+        temperature: options.temperature || DEFAULT_PARAMS.temperature,
+        speed_factor: options.speed_factor || DEFAULT_PARAMS.speed_factor,
+        seed: DEFAULT_PARAMS.seed,
+        media_type: DEFAULT_PARAMS.media_type
+    };
+
+    // 发送请求到GPT-SoVITS API
+    const endpoint = '/tts';
+    const queryParams = new URLSearchParams(params);
+    const config = {
+        method: 'GET',
+        url: `${GPT_SOVITS_API_URL}${endpoint}?${queryParams}`,
+        timeout: 30000,
+        responseType: 'arraybuffer'
+    };
+
+    const response = await axios(config);
+
+    if (response.status === 200 && response.data) {
+        return Buffer.from(response.data);
+    } else {
+        throw new Error(`GPT-SoVITS API returned status ${response.status}`);
+    }
+}
+
+// 长文本分段合成
+async function synthesizeLongText(text, characterConfig, options, maxChunkLength) {
+    console.log(`[${new Date().toISOString()}] Long text synthesis started, length: ${text.length}`);
+
+    // 切分文本
+    const chunks = splitText(text, maxChunkLength);
+    console.log(`[${new Date().toISOString()}] Text split into ${chunks.length} chunks:`, chunks);
+
+    const audioBuffers = [];
+
+    // 逐段合成
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        console.log(`[${new Date().toISOString()}] Synthesizing chunk ${i + 1}/${chunks.length}: "${chunk}"`);
+
+        try {
+            const audioBuffer = await synthesizeSingleChunk(chunk, characterConfig, options);
+            audioBuffers.push(audioBuffer);
+
+            // 添加短暂延迟，避免请求过于频繁
+            if (i < chunks.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        } catch (error) {
+            console.error(`[${new Date().toISOString()}] Failed to synthesize chunk ${i + 1}: "${chunk}"`, error.message);
+            // 继续处理其他块，不中断整个过程
+        }
+    }
+
+    if (audioBuffers.length === 0) {
+        throw new Error('All chunks failed to synthesize');
+    }
+
+    console.log(`[${new Date().toISOString()}] Successfully synthesized ${audioBuffers.length}/${chunks.length} chunks`);
+
+    // 合并音频
+    const mergedAudio = mergeWavBuffers(audioBuffers);
+    if (!mergedAudio) {
+        throw new Error('Failed to merge audio buffers');
+    }
+
+    console.log(`[${new Date().toISOString()}] Audio merge completed, final size: ${mergedAudio.length} bytes`);
+    return mergedAudio;
+}
+
 // 默认角色配置
 const DEFAULT_CHARACTERS = {
     XIANGLING: {
@@ -146,66 +329,43 @@ app.post('/api/gpt-sovits/synthesize', async (req, res) => {
             });
         }
 
-        // 构建请求参数 - 只包含GPT-SoVITS API支持的字段
-        const params = {
-            text: text.trim(),
-            text_lang: options.text_lang || DEFAULT_PARAMS.text_lang,
-            ref_audio_path: characterConfig.refAudio,
-            prompt_text: characterConfig.refText,
-            prompt_lang: characterConfig.language,
-            top_k: options.top_k || DEFAULT_PARAMS.top_k,
-            top_p: options.top_p || DEFAULT_PARAMS.top_p,
-            temperature: options.temperature || DEFAULT_PARAMS.temperature,
-            text_split_method: DEFAULT_PARAMS.text_split_method,
-            batch_size: DEFAULT_PARAMS.batch_size,
-            batch_threshold: DEFAULT_PARAMS.batch_threshold,
-            split_bucket: DEFAULT_PARAMS.split_bucket,
-            speed_factor: options.speed_factor || DEFAULT_PARAMS.speed_factor,
-            fragment_interval: DEFAULT_PARAMS.fragment_interval,
-            seed: DEFAULT_PARAMS.seed,
-            media_type: DEFAULT_PARAMS.media_type,
-            streaming_mode: DEFAULT_PARAMS.streaming_mode,
-            parallel_infer: true,
-            repetition_penalty: 1.35,
-            sample_steps: 32,
-            super_sampling: false
-        };
-
         console.log(`[${new Date().toISOString()}] Synthesis request:`, {
             text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
             character,
-            params: { ...params, text: '[TRUNCATED]' }
+            textLength: text.length
         });
 
-        // 发送请求到GPT-SoVITS API - 使用GET方法
-        const endpoint = '/tts';
-        const queryParams = new URLSearchParams(params);
-        const config = {
-            method: 'GET',
-            url: `${GPT_SOVITS_API_URL}${endpoint}?${queryParams}`,
-            timeout: 60000,
-            responseType: 'arraybuffer'
-        };
+        // 检查文本长度，决定是否需要切分
+        const maxChunkLength = 8; // 每段最大字符数，减少以提高成功率
+        let audioBuffer;
 
-        const response = await axios(config);
+        if (text.length <= maxChunkLength) {
+            // 短文本直接合成
+            console.log(`[${new Date().toISOString()}] Short text synthesis`);
+            audioBuffer = await synthesizeSingleChunk(text, characterConfig, options);
+        } else {
+            // 长文本切分合成
+            console.log(`[${new Date().toISOString()}] Long text synthesis (${text.length} chars)`);
+            audioBuffer = await synthesizeLongText(text, characterConfig, options, maxChunkLength);
+        }
 
-        if (response.data) {
+        if (audioBuffer) {
             console.log(`[${new Date().toISOString()}] Synthesis completed:`, {
                 textLength: text.length,
-                audioSize: response.data.length,
+                audioSize: audioBuffer.length,
                 character
             });
 
             // 设置响应头
             res.set({
                 'Content-Type': 'audio/wav',
-                'Content-Length': response.data.length,
+                'Content-Length': audioBuffer.length,
                 'Content-Disposition': `attachment; filename="gpt-sovits-${Date.now()}.wav"`
             });
 
-            res.send(response.data);
+            res.send(audioBuffer);
         } else {
-            throw new Error('No audio data received from GPT-SoVITS API');
+            throw new Error('No audio data generated');
         }
 
     } catch (error) {
