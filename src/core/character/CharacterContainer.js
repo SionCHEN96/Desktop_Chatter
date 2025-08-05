@@ -119,7 +119,7 @@ function loadFBXModel() {
 
     // 调整模型在场景中的位置和缩放，配合新的容器设置
     fbxModel.position.set(0, -1.5, 0); // 大幅降低模型位置，确保脚部可见
-    let scale = 0.6;
+    let scale = 0.5;
     fbxModel.scale.set(scale, scale, scale);
 
     // 计算模型的边界盒，用于调试

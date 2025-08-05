@@ -58,7 +58,7 @@ export const UI_CONFIG = {
     dark: '#343a40',
     userMessage: '#dcf8c6',
     aiMessage: '#ffffff',
-    background: 'rgba(0, 0, 0, 0.8)'
+    background: 'transparent'  // 修改为透明背景
   },
   WINDOW: {
     width: 400,
@@ -78,7 +78,7 @@ export const UI_CONFIG = {
     borderRadius: '15px',
     backdropFilter: 'blur(10px)',
     border: '1px solid rgba(255, 255, 255, 0.2)',
-    background: 'rgba(0, 0, 0, 0.8)',
+    background: 'transparent',  // 修改为透明背景
     padding: '20px'
   }
 };

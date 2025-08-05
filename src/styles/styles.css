@@ -1,10 +1,18 @@
+/* 确保根元素背景透明 */
+html, body {
+    background: transparent !important;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 /* 调整模型容器样式 - 完全脱离父容器限制 */
 #character-container {
     position: fixed;
     /* 使用fixed定位，完全脱离父容器限制 */
     bottom: -5vh;
     /* 使用vh单位，向下偏移5%视口高度 */
-    left: 0;
+    left: 30px;  /* 往左移动20px */
     width: 50vw;
     /* 占据左半屏幕 */
     height: 120vh;
@@ -21,6 +29,7 @@
     overflow: visible;
     /* 允许内容在容器外显示 */
     /* 允许内容溢出显示，确保腿部可见 */
+    background: transparent;  /* 确保背景透明 */
 }
 
 /* 角色容器内的canvas样式 */
@@ -34,13 +43,14 @@
     pointer-events: auto;
     /* 移除任何可能的变换限制 */
     transform: none;
+    background: transparent;  /* 确保canvas背景透明 */
 }
 
 /* 可爱的粉色消息按钮 - 位于红框左侧，不遮挡面部 */
 .toggle-chat-button {
     position: fixed;
-    top: 120px;
-    left: calc(15vw - 25px);
+    top: 165px;  /* 再往下移动30px */
+    left: calc(15vw - 45px);  /* 往左移动20px */
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -289,8 +299,8 @@
     line-height: 1.5;
     box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
     position: fixed;
-    top: 60px;
-    left: 40vw;
+    top: 140px;  /* 再往下移动40px */
+    left: calc(40vw + 30px);  /* 往右移动30px */
     border: 2px solid rgba(255, 255, 255, 0.3);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: left;
@@ -382,6 +392,7 @@ body {
     -webkit-app-region: no-drag;
     overflow: visible;
     /* 关键：允许子元素溢出显示 */
+    background: transparent;  /* 确保背景透明 */
 }
 
 /* 左侧面板：3D模型容器 */
