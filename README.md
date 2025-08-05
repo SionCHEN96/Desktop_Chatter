@@ -15,6 +15,7 @@ Desktop Chatter是一个创新的桌面AI聊天助手应用程序，结合了3D�
 - 🎭 **3D虚拟角色**: 基于Three.js和VRM模型的可交互3D角色
 - 💬 **自然语言交互**: 与LM Studio集成的AI对话系统
 - 🧠 **智能记忆管理**: 使用ChromaDB向量数据库存储和检索对话历史
+- 🎤 **AI语音合成**: 集成GPT-SoVITS，支持高质量多角色语音克隆
 - 🎬 **动画状态机**: 支持多种角色动画状态（待机、思考、情感表达等）
 - 🖥️ **跨平台桌面应用**: 基于Electron的现代桌面应用程序
 - 🔧 **模块化架构**: 采用服务化设计，易于扩展和维护
@@ -62,6 +63,32 @@ Desktop Chatter是一个创新的桌面AI聊天助手应用程序，结合了3D�
    # 或者一步完成设置和启动
    npm run start-with-chromadb
    ```
+
+### 🎤 GPT-SoVITS语音合成（可选）
+
+如果您想使用AI语音合成功能：
+
+1. **安装GPT-SoVITS**
+   - 从 [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS) 下载并安装
+   - 按照官方文档配置环境
+
+2. **启动GPT-SoVITS服务**
+   ```bash
+   # 在GPT-SoVITS目录中
+   python api_v2.py -a 127.0.0.1 -p 9880
+   ```
+
+3. **启动测试服务器**
+   ```bash
+   # 在Desktop Chatter目录中
+   npm run gpt-sovits-test
+   ```
+
+4. **访问测试页面**
+   - 打开浏览器访问: http://localhost:3000/gpt-sovits-test.html
+   - 测试语音合成功能
+
+详细文档请参考: [GPT-SoVITS集成文档](docs/GPT-SOVITS-INTEGRATION.md)
 
 ### 📁 项目结构（简化版）
 

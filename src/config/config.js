@@ -194,6 +194,46 @@ export const RENDERING_CONFIG = {
   }
 };
 
+// ==================== GPT-SoVITS 配置 ====================
+export const GPT_SOVITS_CONFIG = {
+  API_URL: 'http://127.0.0.1:9880',
+  API_V2_URL: 'http://127.0.0.1:9880',
+  USE_API_V2: true,
+  TIMEOUT: 30000,
+  MODELS: {
+    GPT_MODEL_PATH: 'GPT_SoVITS/pretrained_models/gsv-v2final-pretrained/s1bert25hz-2kh-longer-epoch=68e-step=50232.ckpt',
+    SOVITS_MODEL_PATH: 'GPT_SoVITS/pretrained_models/gsv-v2final-pretrained/s2G488k.pth',
+    // 本地模型路径（相对于项目根目录）
+    LOCAL_MODELS: {
+      XIANGLING: {
+        GPT_MODEL: 'public/GPT-SOVITS-models/Xiangling-e15.ckpt',
+        SOVITS_MODEL: 'public/GPT-SOVITS-models/Xiangling_e8_s80.pth',
+        REF_AUDIO: 'public/GPT-SOVITS-models/RefAudio-Xiangling.wav',
+        REF_TEXT: '我是不会对食物有什么偏见的，只有不合适的做法...',
+        REF_LANGUAGE: 'zh'
+      }
+    }
+  },
+  DEFAULT_PARAMS: {
+    text_lang: 'zh',
+    ref_audio_path: 'public/GPT-SOVITS-models/RefAudio-Xiangling.wav',
+    prompt_text: '我是不会对食物有什么偏见的，只有不合适的做法...',
+    prompt_lang: 'zh',
+    top_k: 5,
+    top_p: 1.0,
+    temperature: 1.0,
+    text_split_method: 'cut5',
+    batch_size: 1,
+    batch_threshold: 0.75,
+    split_bucket: true,
+    speed_factor: 1.0,
+    fragment_interval: 0.3,
+    seed: -1,
+    media_type: 'wav',
+    streaming_mode: false
+  }
+};
+
 // ==================== 日志配置 ====================
 export const LOGGING_CONFIG = {
   LEVEL: 'INFO',
@@ -217,7 +257,8 @@ export default {
   MEMORY: MEMORY_CONFIG,
   RENDERING: RENDERING_CONFIG,
   LOGGING: LOGGING_CONFIG,
-  
+  GPT_SOVITS: GPT_SOVITS_CONFIG,
+
   // 工具函数
   validateUrl,
   buildSystemPromptWithMemory

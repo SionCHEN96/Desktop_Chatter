@@ -12,9 +12,10 @@ import fs from 'fs';
  * 封装IPC通信相关的所有操作
  */
 export class IPCService {
-  constructor(aiService, windowService) {
+  constructor(aiService, windowService, gptSovitsService = null) {
     this.aiService = aiService;
     this.windowService = windowService;
+    this.gptSovitsService = gptSovitsService;
     this.setupIPCHandlers();
   }
 
@@ -96,6 +97,81 @@ export class IPCService {
       }
       return null;
     });
+
+    // GPT-SoVITS相关处理器
+    if (this.gptSovitsService) {
+      // 处理语音合成请求
+      ipcMain.handle('gpt-sovits-synthesize', async (event, { text, options = {} }) => {
+        try {
+          console.log('[IPCService] GPT-SoVITS synthesis request:', { text: text.substring(0, 50) + '...', options });
+          const audioBuffer = await this.gptSovitsService.synthesize(text, options);
+          return {
+            success: true,
+            audioBuffer: Array.from(audioBuffer)
+          };
+        } catch (error) {
+          console.error('[IPCService] GPT-SoVITS synthesis failed:', error);
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      });
+
+      // 处理角色语音合成请求
+      ipcMain.handle('gpt-sovits-synthesize-character', async (event, { text, character, options = {} }) => {
+        try {
+          console.log('[IPCService] GPT-SoVITS character synthesis request:', { text: text.substring(0, 50) + '...', character, options });
+          const audioBuffer = await this.gptSovitsService.synthesizeWithCharacter(text, character, options);
+          return {
+            success: true,
+            audioBuffer: Array.from(audioBuffer)
+          };
+        } catch (error) {
+          console.error('[IPCService] GPT-SoVITS character synthesis failed:', error);
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      });
+
+      // 处理服务健康检查
+      ipcMain.handle('gpt-sovits-health', async () => {
+        try {
+          const isHealthy = await this.gptSovitsService.checkServiceHealth();
+          return {
+            success: true,
+            healthy: isHealthy,
+            serviceInfo: this.gptSovitsService.getServiceInfo()
+          };
+        } catch (error) {
+          console.error('[IPCService] GPT-SoVITS health check failed:', error);
+          return {
+            success: false,
+            healthy: false,
+            error: error.message
+          };
+        }
+      });
+
+      // 处理获取可用角色
+      ipcMain.handle('gpt-sovits-characters', () => {
+        try {
+          const characters = this.gptSovitsService.getAvailableCharacters();
+          return {
+            success: true,
+            characters
+          };
+        } catch (error) {
+          console.error('[IPCService] Failed to get GPT-SoVITS characters:', error);
+          return {
+            success: false,
+            error: error.message
+          };
+        }
+      });
+    }
   }
 
   /**
@@ -111,5 +187,13 @@ export class IPCService {
     ipcMain.removeAllListeners('set-window-visibility');
     ipcMain.removeHandler('get-app-info');
     ipcMain.removeHandler('get-window-state');
+
+    // 移除GPT-SoVITS相关处理器
+    if (this.gptSovitsService) {
+      ipcMain.removeHandler('gpt-sovits-synthesize');
+      ipcMain.removeHandler('gpt-sovits-synthesize-character');
+      ipcMain.removeHandler('gpt-sovits-health');
+      ipcMain.removeHandler('gpt-sovits-characters');
+    }
   }
 }
