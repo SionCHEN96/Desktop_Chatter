@@ -18,9 +18,9 @@ async function checkPython() {
     let checkedCommands = 0;
     
     pythonCommands.forEach(cmd => {
-      const process = spawn(cmd, ['--version'], { stdio: 'pipe' });
-      
-      process.on('close', (code) => {
+      const pythonProcess = spawn(cmd, ['--version'], { stdio: 'pipe' });
+
+      pythonProcess.on('close', (code) => {
         checkedCommands++;
         if (code === 0 && !pythonFound) {
           console.log(`✅ Found Python: ${cmd}`);
@@ -30,8 +30,8 @@ async function checkPython() {
           resolve(false);
         }
       });
-      
-      process.on('error', () => {
+
+      pythonProcess.on('error', () => {
         checkedCommands++;
         if (checkedCommands === pythonCommands.length && !pythonFound) {
           resolve(false);
@@ -48,9 +48,9 @@ async function checkPython() {
 async function checkChromaDB() {
   return new Promise((resolve) => {
     const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-    const process = spawn(pythonCmd, ['-c', 'import chromadb; print("ChromaDB available")'], { stdio: 'pipe' });
-    
-    process.on('close', (code) => {
+    const chromaProcess = spawn(pythonCmd, ['-c', 'import chromadb; print("ChromaDB available")'], { stdio: 'pipe' });
+
+    chromaProcess.on('close', (code) => {
       if (code === 0) {
         console.log('✅ ChromaDB is already installed');
         resolve(true);
@@ -59,8 +59,8 @@ async function checkChromaDB() {
         resolve(false);
       }
     });
-    
-    process.on('error', () => {
+
+    chromaProcess.on('error', () => {
       resolve(false);
     });
   });
@@ -73,13 +73,13 @@ async function checkChromaDB() {
 async function installChromaDB() {
   return new Promise((resolve) => {
     console.log('📦 Installing ChromaDB...');
-    
+
     const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
-    const process = spawn(pythonCmd, ['-m', 'pip', 'install', 'chromadb'], { 
-      stdio: 'inherit' 
+    const installProcess = spawn(pythonCmd, ['-m', 'pip', 'install', 'chromadb'], {
+      stdio: 'inherit'
     });
-    
-    process.on('close', (code) => {
+
+    installProcess.on('close', (code) => {
       if (code === 0) {
         console.log('✅ ChromaDB installed successfully');
         resolve(true);
@@ -88,8 +88,8 @@ async function installChromaDB() {
         resolve(false);
       }
     });
-    
-    process.on('error', (error) => {
+
+    installProcess.on('error', (error) => {
       console.error('❌ Error installing ChromaDB:', error.message);
       resolve(false);
     });
@@ -100,7 +100,7 @@ async function installChromaDB() {
  * 主设置函数
  */
 async function setupChromaDB() {
-  console.log('🚀 Setting up ChromaDB for AI Companion...\n');
+  console.log('🚀 Setting up ChromaDB for Desktop Chatter...\n');
   
   // 检查Python
   console.log('1. Checking Python installation...');
@@ -136,9 +136,7 @@ async function setupChromaDB() {
 }
 
 // 运行设置
-if (import.meta.url === `file://${process.argv[1]}`) {
-  setupChromaDB().catch(error => {
-    console.error('❌ Setup failed:', error);
-    process.exit(1);
-  });
-}
+setupChromaDB().catch(error => {
+  console.error('❌ Setup failed:', error);
+  process.exit(1);
+});

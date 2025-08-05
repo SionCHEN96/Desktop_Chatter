@@ -89,18 +89,19 @@ export const ANIMATION_CONFIG = {
   TRANSITION_DURATION: 500,
   BLEND_MODE: 'smooth',
   RESOURCES: {
-    idle: '/Animations/idle.fbx',
-    thinking: '/Animations/thinking.fbx',
-    speaking: '/Animations/speaking.fbx',
-    joy: '/Animations/joy.fbx',
-    sad: '/Animations/sad.fbx',
-    surprised: '/Animations/surprised.fbx'
+    idle: './public/Animations/Idle.fbx',
+    thinking: './public/Animations/Thinking.fbx'
+    // 暂时注释掉其他动画，只保留基础的 idle 和 thinking
+    // speaking: './public/Animations/Looking.fbx',
+    // joy: './public/Animations/Look Around.fbx',
+    // sad: './public/Animations/Standing Idle.fbx',
+    // surprised: './public/Animations/Look Around.fbx'
   },
   EVENTS: {
     USER_MESSAGE: 'thinking',
-    AI_RESPONSE: 'speaking',
+    AI_RESPONSE: 'idle',  // 暂时改为 idle，因为没有 speaking 状态
     IDLE: 'idle',
-    ERROR: 'sad'
+    ERROR: 'idle'  // 暂时改为 idle，因为没有 sad 状态
   }
 };
 
@@ -135,9 +136,49 @@ export const RENDERING_CONFIG = {
     target: [0, 1, 0]
   },
   LIGHTING: {
-    AMBIENT_INTENSITY: 0.4,
-    DIRECTIONAL_INTENSITY: 0.8,
-    DIRECTIONAL_POSITION: { x: 5, y: 10, z: 5 }
+    // 主方向光配置
+    directional: {
+      color: 0xffffff,
+      intensity: 0.8,
+      position: [5, 10, 5],
+      castShadow: true,
+      shadow: {
+        mapSize: 2048,
+        camera: {
+          near: 0.1,
+          far: 50,
+          left: -10,
+          right: 10,
+          top: 10,
+          bottom: -10
+        },
+        bias: -0.0001,
+        normalBias: 0.02
+      }
+    },
+    // 填充光配置
+    fill: {
+      color: 0x87ceeb,
+      intensity: 0.3,
+      position: [-5, 5, -5]
+    },
+    // 轮廓光配置
+    rim: {
+      color: 0xffffff,
+      intensity: 0.2,
+      position: [0, 5, -10]
+    },
+    // 环境光配置
+    ambient: {
+      color: 0x404040,
+      intensity: 0.4
+    },
+    // 半球光配置
+    hemisphere: {
+      skyColor: 0x87ceeb,
+      groundColor: 0x444444,
+      intensity: 0.3
+    }
   },
   RENDERER: {
     antialias: true,

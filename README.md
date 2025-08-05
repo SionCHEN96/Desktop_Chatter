@@ -1,6 +1,6 @@
-# AI Companion
+# Desktop Chatter
 
-一个基于Electron的3D虚拟角色AI助手应用程序，具有自然语言交互、记忆管理和动画系统。
+一个基于Electron的桌面AI聊天助手应用程序，具有3D虚拟角色、自然语言交互、记忆管理和动画系统。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org/)
@@ -8,7 +8,7 @@
 
 ## 项目概述
 
-AI Companion是一个创新的桌面应用程序，结合了3D虚拟角色、自然语言处理和向量数据库技术。该应用提供了一个具有情感表达和记忆能力的虚拟角色，可以与用户进行自然对话，并根据上下文提供个性化的响应。
+Desktop Chatter是一个创新的桌面AI聊天助手应用程序，结合了3D虚拟角色、自然语言处理和向量数据库技术。该应用提供了一个具有情感表达和记忆能力的虚拟角色，可以与用户进行自然对话，并根据上下文提供个性化的响应。
 
 ### 🌟 核心特性
 
@@ -43,7 +43,7 @@ AI Companion是一个创新的桌面应用程序，结合了3D虚拟角色、自
 1. **克隆项目**
    ```bash
    git clone <repository-url>
-   cd ai-companion
+   cd desktop-chatter
    ```
 
 2. **安装依赖**
@@ -249,6 +249,12 @@ A: 在`src/config/animationConfig.js`中添加动画配置，然后在动画状�
 - [API文档](./docs/API.md) - 服务和组件API文档（待添加）
 
 ### 🔄 版本历史
+
+- **v1.2.0** - 项目重命名和依赖更新版本
+  - 🏷️ 项目重命名：AI Companion → Desktop Chatter
+  - 📦 依赖安装和ChromaDB设置优化
+  - 🔧 修复ChromaDB设置脚本的变量冲突问题
+  - 📚 更新所有文档以反映新的项目名称
 
 - **v1.1.0** - 结构优化版本
   - 实现服务化架构

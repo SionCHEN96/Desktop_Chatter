@@ -1,7 +1,7 @@
 {
-  "name": "ai-companion",
+  "name": "desktop-chatter",
   "version": "1.0.0",
-  "description": "AI虚拟助手MVP",
+  "description": "Desktop Chatter - 桌面AI聊天助手",
   "main": "src/main/main.cjs",
   "type": "module",
   "scripts": {

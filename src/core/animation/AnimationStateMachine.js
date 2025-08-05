@@ -67,34 +67,35 @@ export class AnimationStateMachine {
     this.character = character;
     this.mixer = mixer;
 
-    // 定义状态
+    // 定义状态 - 暂时只保留基础的 idle 和 thinking 状态
     this.defineState('idle', {
       animation: 'idle',
-      transitions: ['thinking', 'joy', 'sad'],
+      transitions: ['thinking'],
       loop: true
     });
 
     this.defineState('thinking', {
       animation: 'thinking',
-      transitions: ['idle', 'joy', 'sad'],
+      transitions: ['idle'],
       loop: true
     });
 
-    this.defineState('joy', {
-      animation: 'joy',
-      transitions: ['idle'],
-      loop: false,
-      autoTransition: 'idle',
-      transitionDelay: 3000
-    });
+    // 暂时注释掉其他状态，专注于基础功能
+    // this.defineState('joy', {
+    //   animation: 'joy',
+    //   transitions: ['idle'],
+    //   loop: false,
+    //   autoTransition: 'idle',
+    //   transitionDelay: 3000
+    // });
 
-    this.defineState('sad', {
-      animation: 'sad',
-      transitions: ['idle'],
-      loop: false,
-      autoTransition: 'idle',
-      transitionDelay: 3000
-    });
+    // this.defineState('sad', {
+    //   animation: 'sad',
+    //   transitions: ['idle'],
+    //   loop: false,
+    //   autoTransition: 'idle',
+    //   transitionDelay: 3000
+    // });
 
     return this;
   }
@@ -278,11 +279,13 @@ export class AnimationStateMachine {
   // 加载动画
   loadAnimation(stateName, animationName) {
     return new Promise((resolve, reject) => {
-      const animationConfig = ANIMATION_CONFIG[animationName];
-      if (!animationConfig) {
+      const animationPath = ANIMATION_CONFIG.RESOURCES[animationName];
+      if (!animationPath) {
         reject(new Error(`动画配置 "${animationName}" 不存在`));
         return;
       }
+
+      console.log(`[动画加载] 尝试加载动画: ${animationName} -> ${animationPath}`);
 
       // 获取状态配置
       const stateConfig = this.states.get(stateName);
@@ -292,7 +295,7 @@ export class AnimationStateMachine {
       }
 
       const loader = new FBXLoader();
-      loader.load(animationConfig.resource, (object) => {
+      loader.load(animationPath, (object) => {
         if (object.animations && object.animations.length > 0) {
           const action = this.mixer.clipAction(object.animations[0]);
 
@@ -310,7 +313,7 @@ export class AnimationStateMachine {
           console.log(`动画 "${animationName}" 加载完成`);
           resolve(action);
         } else {
-          reject(new Error(`动画文件中未找到动画剪辑: ${animationConfig.resource}`));
+          reject(new Error(`动画文件中未找到动画剪辑: ${animationPath}`));
         }
       }, undefined, (error) => {
         console.error('加载动画时出错:', animationName, error);

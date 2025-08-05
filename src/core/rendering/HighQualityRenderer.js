@@ -16,7 +16,8 @@ const {
   QUALITY,
   PERFORMANCE,
   CAMERA,
-  LIGHTING
+  LIGHTING,
+  RENDERER
 } = RENDERING_CONFIG;
 
 export class HighQualityRenderer {
@@ -83,24 +84,24 @@ export class HighQualityRenderer {
     const height = this.container.clientHeight;
     
     this.renderer = new THREE.WebGLRenderer({
-      antialias: RENDERER_CONFIG.antialias,
-      powerPreference: RENDERER_CONFIG.powerPreference,
-      alpha: RENDERER_CONFIG.alpha,
-      stencil: RENDERER_CONFIG.stencil,
-      depth: RENDERER_CONFIG.depth,
-      logarithmicDepthBuffer: RENDERER_CONFIG.logarithmicDepthBuffer
+      antialias: RENDERER.antialias,
+      powerPreference: RENDERER.powerPreference,
+      alpha: RENDERER.alpha,
+      stencil: RENDERER.stencil,
+      depth: RENDERER.depth,
+      logarithmicDepthBuffer: RENDERER.logarithmicDepthBuffer
     });
-    
+
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(RENDERER_CONFIG.pixelRatio);
-    
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
     // 色彩空间和色调映射
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = RENDERER_CONFIG.toneMappingExposure;
-    
+    this.renderer.toneMappingExposure = RENDERER.toneMappingExposure;
+
     // 阴影设置
-    this.renderer.shadowMap.enabled = RENDERER_CONFIG.shadowMap.enabled;
+    this.renderer.shadowMap.enabled = RENDERER.shadowMap.enabled;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     // 其他高质量设置
@@ -117,15 +118,15 @@ export class HighQualityRenderer {
   setupLighting() {
     // 主方向光
     const directionalLight = new THREE.DirectionalLight(
-      LIGHTING_CONFIG.directional.color,
-      LIGHTING_CONFIG.directional.intensity
+      LIGHTING.directional.color,
+      LIGHTING.directional.intensity
     );
-    directionalLight.position.set(...LIGHTING_CONFIG.directional.position);
-    directionalLight.castShadow = LIGHTING_CONFIG.directional.castShadow;
-    
+    directionalLight.position.set(...LIGHTING.directional.position);
+    directionalLight.castShadow = LIGHTING.directional.castShadow;
+
     // 配置阴影
     if (directionalLight.castShadow) {
-      const shadowConfig = LIGHTING_CONFIG.directional.shadow;
+      const shadowConfig = LIGHTING.directional.shadow;
       directionalLight.shadow.mapSize.width = shadowConfig.mapSize;
       directionalLight.shadow.mapSize.height = shadowConfig.mapSize;
       directionalLight.shadow.camera.near = shadowConfig.camera.near;
@@ -137,37 +138,37 @@ export class HighQualityRenderer {
       directionalLight.shadow.bias = shadowConfig.bias;
       directionalLight.shadow.normalBias = shadowConfig.normalBias;
     }
-    
+
     this.scene.add(directionalLight);
-    
+
     // 填充光
     const fillLight = new THREE.DirectionalLight(
-      LIGHTING_CONFIG.fill.color,
-      LIGHTING_CONFIG.fill.intensity
+      LIGHTING.fill.color,
+      LIGHTING.fill.intensity
     );
-    fillLight.position.set(...LIGHTING_CONFIG.fill.position);
+    fillLight.position.set(...LIGHTING.fill.position);
     this.scene.add(fillLight);
-    
+
     // 轮廓光
     const rimLight = new THREE.DirectionalLight(
-      LIGHTING_CONFIG.rim.color,
-      LIGHTING_CONFIG.rim.intensity
+      LIGHTING.rim.color,
+      LIGHTING.rim.intensity
     );
-    rimLight.position.set(...LIGHTING_CONFIG.rim.position);
+    rimLight.position.set(...LIGHTING.rim.position);
     this.scene.add(rimLight);
-    
+
     // 环境光
     const ambientLight = new THREE.AmbientLight(
-      LIGHTING_CONFIG.ambient.color,
-      LIGHTING_CONFIG.ambient.intensity
+      LIGHTING.ambient.color,
+      LIGHTING.ambient.intensity
     );
     this.scene.add(ambientLight);
-    
+
     // 半球光
     const hemisphereLight = new THREE.HemisphereLight(
-      LIGHTING_CONFIG.hemisphere.skyColor,
-      LIGHTING_CONFIG.hemisphere.groundColor,
-      LIGHTING_CONFIG.hemisphere.intensity
+      LIGHTING.hemisphere.skyColor,
+      LIGHTING.hemisphere.groundColor,
+      LIGHTING.hemisphere.intensity
     );
     this.scene.add(hemisphereLight);
   }

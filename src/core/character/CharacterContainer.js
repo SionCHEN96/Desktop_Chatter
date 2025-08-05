@@ -29,11 +29,16 @@ const MOUSE_IDLE_TIMEOUT = 3000; // 鼠标静止3秒后回到默认位置
 
 // 初始化容器
 export function initCharacterContainer() {
+  console.log('[CharacterContainer] 开始初始化角色容器...');
+
   characterContainer = document.getElementById('character-container');
+  console.log('[CharacterContainer] 查找容器元素:', characterContainer);
+
   if (characterContainer) {
     // 获取容器的实际尺寸
     const width = characterContainer.clientWidth;
     const height = characterContainer.clientHeight;
+    console.log('[CharacterContainer] 容器尺寸:', { width, height });
 
     // 初始化3D场景
     initCharacter3D(width, height);
@@ -47,9 +52,14 @@ export function initCharacterContainer() {
     // 初始化鼠标跟踪功能 (已禁用)
     // initMouseTracking();
 
+    console.log('[CharacterContainer] 角色容器初始化完成');
     return { width, height, scene, camera };
+  } else {
+    console.error('[CharacterContainer] 未找到character-container元素');
+    console.log('[CharacterContainer] 当前DOM状态:', document.readyState);
+    console.log('[CharacterContainer] 所有元素:', document.querySelectorAll('*'));
+    return null;
   }
-  return null;
 }
 
 // 窗口大小变化处理函数

@@ -1,9 +1,41 @@
 # 更新日志
 
-本文档记录了AI Companion项目的所有重要变更。
+本文档记录了Desktop Chatter项目的所有重要变更。
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+
+## [1.2.1] - 2025-08-05
+
+### 🏷️ 项目重命名和依赖更新
+
+#### 项目重命名
+- **项目名称**: AI Companion → Desktop Chatter
+- **package.json**: 更新项目名称和描述
+- **文档更新**: 更新所有相关文档中的项目名称
+  - README.md
+  - CHANGELOG.md
+  - PROJECT_CLEANUP_SUMMARY.md
+  - docs/README.md
+  - docs/ARCHITECTURE.md
+  - scripts/setup-chromadb.js
+  - .gitattributes
+
+#### 依赖管理
+- **依赖安装**: 成功安装所有必要的npm依赖包
+- **ChromaDB设置**: 修复并优化ChromaDB设置脚本
+- **数据库清理**: 清理损坏的ChromaDB数据文件
+
+#### 🔧 技术修复
+- **变量冲突**: 修复setup-chromadb.js中的process变量冲突问题
+- **模块检测**: 改进脚本的模块执行检测逻辑
+- **错误处理**: 优化ChromaDB启动和连接的错误处理
+
+#### ✅ 验证结果
+- **应用启动**: 应用成功启动并运行
+- **ChromaDB**: 向量数据库服务正常运行在localhost:8000
+- **内存服务**: 成功使用ChromaDB策略初始化
+- **系统托盘**: 系统托盘功能正常
 
 ## [1.2.0] - 2024-01-XX
 

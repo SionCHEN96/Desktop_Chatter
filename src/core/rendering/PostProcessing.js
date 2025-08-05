@@ -18,8 +18,22 @@ import { RENDERING_CONFIG } from '../../config/index.js';
 
 // 使用默认的后处理配置
 const POST_PROCESSING_CONFIG = {
-  ssao: { enabled: true },
-  bloom: { enabled: true },
+  ssao: {
+    enabled: true,
+    kernelRadius: 8,
+    minDistance: 0.005,
+    maxDistance: 0.1,
+    intensity: 1.0,
+    bias: 0.01,
+    scale: 1.0,
+    kernelSize: 32
+  },
+  bloom: {
+    enabled: true,
+    threshold: 0.85,
+    strength: 0.35,
+    radius: 0.8
+  },
   fxaa: { enabled: true }
 };
 

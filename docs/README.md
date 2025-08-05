@@ -1,6 +1,6 @@
-# AI Companion 文档中心
+# Desktop Chatter 文档中心
 
-欢迎来到AI Companion项目的文档中心。这里包含了项目的所有技术文档和开发指南。
+欢迎来到Desktop Chatter项目的文档中心。这里包含了项目的所有技术文档和开发指南。
 
 ## 📚 文档导航
 
