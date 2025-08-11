@@ -12,7 +12,6 @@ export {
     MEMORY_CONFIG,
     RENDERING_CONFIG,
     LOGGING_CONFIG,
-    GPT_SOVITS_CONFIG,
     validateUrl,
     buildSystemPromptWithMemory
 } from './config.js';

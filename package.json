@@ -9,9 +9,7 @@
     "setup-chromadb": "node scripts/setup-chromadb.js",
     "start-with-chromadb": "npm run setup-chromadb && npm start",
     "build": "electron-builder",
-    "dev": "electron . --inspect=9229",
-    "gpt-sovits-test": "node gpt-sovits-server.js",
-    "test-tts": "npm run gpt-sovits-test"
+    "dev": "electron . --inspect=9229"
   },
   "keywords": [
     "ai",
@@ -30,11 +28,7 @@
     "@electron/remote": "^2.0.11",
     "@mlc-ai/web-llm": "^0.2.31",
     "@pixiv/three-vrm": "^3.4.2",
-    "axios": "^1.4.0",
     "chromadb": "^3.0.10",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "multer": "^2.0.2",
     "three": "^0.170.0"
   }
 }

@@ -3,7 +3,7 @@
  * 负责与LM Studio API的交互和AI响应处理
  */
 
-import axios from 'axios';
+// 使用Node.js内置的fetch API
 import { AI_CONFIG, validateUrl, buildSystemPromptWithMemory } from '../../config/index.js';
 import { createLogger, createError, ErrorType, ErrorSeverity } from '../../utils/index.js';
 
@@ -103,44 +103,62 @@ export class AIService {
    */
   async _sendRequest(systemPrompt, userMessage) {
     try {
-      return await axios.post(
-        `${AI_CONFIG.BASE_URL}/v1/chat/completions`,
-        {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(`${AI_CONFIG.BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           model: AI_CONFIG.MODEL,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
           ],
           temperature: AI_CONFIG.TEMPERATURE,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 30000
-        }
-      );
-    } catch (error) {
-      if (error.code === 'ECONNREFUSED') {
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
         throw createError(
-          'Cannot connect to LM Studio API',
-          ErrorType.NETWORK,
+          'API request failed',
+          ErrorType.EXTERNAL_API,
           ErrorSeverity.HIGH,
-          { url: AI_CONFIG.BASE_URL, code: error.code }
+          { status: response.status, statusText: response.statusText }
         );
-      } else if (error.code === 'ETIMEDOUT') {
+      }
+
+      const data = await response.json();
+      return { data };
+    } catch (error) {
+      if (error.name === 'AbortError') {
         throw createError(
           'Request timeout',
           ErrorType.NETWORK,
           ErrorSeverity.MEDIUM,
           { timeout: 30000 }
         );
+      } else if (error.code === 'ECONNREFUSED' || error.message.includes('fetch')) {
+        throw createError(
+          'Cannot connect to LM Studio API',
+          ErrorType.NETWORK,
+          ErrorSeverity.HIGH,
+          { url: AI_CONFIG.BASE_URL, code: error.code }
+        );
+      } else if (error.type) {
+        // 已经是我们的错误对象
+        throw error;
       } else {
         throw createError(
           'API request failed',
           ErrorType.EXTERNAL_API,
           ErrorSeverity.HIGH,
-          { status: error.response?.status, statusText: error.response?.statusText },
+          { originalError: error.message },
           error
         );
       }

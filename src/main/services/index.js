@@ -9,4 +9,3 @@ export { IPCService } from './ipcService.js';
 export { MemoryService } from './memoryService.js';
 export { ChromaService } from './chromaService.js';
 export { TrayService } from './trayService.js';
-export { GPTSoVITSService } from './gptSovitsService.js';

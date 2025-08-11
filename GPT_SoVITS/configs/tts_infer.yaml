@@ -1,5 +1,0 @@
-device: cpu
-is_half: false
-version: v2
-t2s_weights_path: GPT_SoVITS/pretrained_models/s1bert25hz-2kh-longer-epoch=68e-step=50232.ckpt
-vits_weights_path: GPT_SoVITS/pretrained_models/s2G488k.pth
