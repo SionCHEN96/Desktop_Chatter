@@ -39,6 +39,14 @@ test_output.wav
 cloned_*.wav
 simple_cloned_*.wav
 
+# Cleanup and deployment files
+deploy_*.py
+deploy_*.bat
+setup_*.ps1
+setup_*.bat
+*_commands.md
+verify_*.md
+
 # OS generated files
 .DS_Store
 .DS_Store?
