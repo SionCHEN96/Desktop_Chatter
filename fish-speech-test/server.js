@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+const PORT = 3002;
 
 // Fish Speech API配置
 const FISH_SPEECH_CONFIG = {
@@ -344,13 +344,16 @@ async function synthesizeWithAPI(apiUrl, params) {
  */
 app.post('/api/tts', async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, referenceAudio, referenceText } = req.body;
 
     if (!text) {
       return res.status(400).json({ error: 'Text is required' });
     }
 
     console.log('TTS request for text:', text);
+    if (referenceAudio && referenceText) {
+      console.log('Using voice cloning with reference audio');
+    }
 
     // 检查Fish Speech服务是否可用
     try {
@@ -365,7 +368,7 @@ app.post('/api/tts', async (req, res) => {
       });
     }
 
-    // 调用Fish Speech API
+    // 构建Fish Speech API请求
     const ttsRequest = {
       text: text,
       format: "wav",
@@ -373,8 +376,25 @@ app.post('/api/tts', async (req, res) => {
       normalize: true,
       temperature: 0.8,
       top_p: 0.8,
-      repetition_penalty: 1.1
+      repetition_penalty: 1.1,
+      references: []
     };
+
+    // 如果提供了参考音频，添加到请求中进行声音克隆
+    if (referenceAudio && referenceText) {
+      try {
+        // 参考音频应该是base64编码的字符串
+        const audioBytes = Buffer.from(referenceAudio, 'base64');
+        ttsRequest.references = [{
+          audio: referenceAudio, // Fish Speech API会自动解码base64
+          text: referenceText
+        }];
+        console.log(`Added reference audio: ${audioBytes.length} bytes, text: "${referenceText}"`);
+      } catch (error) {
+        console.error('Failed to process reference audio:', error);
+        return res.status(400).json({ error: 'Invalid reference audio format. Expected base64 encoded audio.' });
+      }
+    }
 
     console.log('Sending TTS request to Fish Speech API...');
     const ttsResponse = await fetch('http://localhost:8080/v1/tts', {
@@ -415,7 +435,8 @@ app.post('/api/tts', async (req, res) => {
       success: true,
       message: 'TTS completed successfully',
       audioUrl: `/generated_audio/${filename}`,
-      audioSize: audioBuffer.byteLength
+      audioSize: audioBuffer.byteLength,
+      usedVoiceCloning: !!(referenceAudio && referenceText)
     });
 
   } catch (error) {
@@ -426,6 +447,116 @@ app.post('/api/tts', async (req, res) => {
 
 // 提供生成的音频文件
 app.use('/generated_audio', express.static(path.join(__dirname, 'generated_audio')));
+
+/**
+ * 声音克隆端点（支持文件上传）
+ */
+import multer from 'multer';
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+app.post('/api/voice-clone', upload.single('referenceAudio'), async (req, res) => {
+  try {
+    const { text, referenceText } = req.body;
+    const referenceAudioFile = req.file;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    if (!referenceAudioFile || !referenceText) {
+      return res.status(400).json({
+        error: 'Both reference audio file and reference text are required for voice cloning'
+      });
+    }
+
+    console.log('Voice cloning request:');
+    console.log(`- Text: ${text}`);
+    console.log(`- Reference text: ${referenceText}`);
+    console.log(`- Reference audio: ${referenceAudioFile.originalname} (${referenceAudioFile.size} bytes)`);
+
+    // 检查Fish Speech服务是否可用
+    try {
+      const healthResponse = await fetch('http://localhost:8080/v1/health');
+      if (!healthResponse.ok) {
+        throw new Error('Fish Speech server not responding');
+      }
+    } catch (healthError) {
+      console.error('Fish Speech health check failed:', healthError);
+      return res.status(503).json({
+        error: 'Fish Speech server is not available. Please make sure it is running on port 8080.'
+      });
+    }
+
+    // 将音频文件转换为base64
+    const audioBase64 = referenceAudioFile.buffer.toString('base64');
+
+    // 构建Fish Speech API请求
+    const ttsRequest = {
+      text: text,
+      format: "wav",
+      chunk_length: 200,
+      normalize: true,
+      temperature: 0.8,
+      top_p: 0.8,
+      repetition_penalty: 1.1,
+      references: [{
+        audio: audioBase64,
+        text: referenceText
+      }]
+    };
+
+    console.log('Sending voice cloning request to Fish Speech API...');
+    const ttsResponse = await fetch('http://localhost:8080/v1/tts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(ttsRequest)
+    });
+
+    if (!ttsResponse.ok) {
+      const errorText = await ttsResponse.text();
+      console.error('Fish Speech voice cloning failed:', ttsResponse.status, errorText);
+      return res.status(500).json({
+        error: `Fish Speech voice cloning failed: ${ttsResponse.status}`
+      });
+    }
+
+    // 获取音频数据
+    const audioBuffer = await ttsResponse.arrayBuffer();
+    console.log(`Voice cloning successful, audio size: ${audioBuffer.byteLength} bytes`);
+
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const filename = `voice_clone_${timestamp}.wav`;
+    const audioDir = path.join(__dirname, 'generated_audio');
+    const filepath = path.join(audioDir, filename);
+
+    // 创建目录（如果不存在）
+    if (!fs.existsSync(audioDir)) {
+      fs.mkdirSync(audioDir, { recursive: true });
+    }
+
+    // 保存音频文件
+    fs.writeFileSync(filepath, Buffer.from(audioBuffer));
+
+    res.json({
+      success: true,
+      message: 'Voice cloning completed successfully',
+      audioUrl: `/generated_audio/${filename}`,
+      audioSize: audioBuffer.byteLength,
+      referenceAudioSize: referenceAudioFile.size,
+      referenceText: referenceText
+    });
+
+  } catch (error) {
+    console.error('Voice cloning error:', error);
+    res.status(500).json({ error: 'Voice cloning service error: ' + error.message });
+  }
+});
 
 /**
  * 使用Hugging Face Space进行合成
