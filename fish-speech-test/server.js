@@ -246,7 +246,8 @@ app.post('/api/fish-speech/synthesize', async (req, res) => {
       res.set({
         'Content-Type': 'audio/wav',
         'Content-Length': audioBuffer.byteLength,
-        'Content-Disposition': `attachment; filename="fish-speech-${Date.now()}.wav"`
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*'
       });
       
       res.send(Buffer.from(audioBuffer));
@@ -446,7 +447,15 @@ app.post('/api/tts', async (req, res) => {
 });
 
 // 提供生成的音频文件
-app.use('/generated_audio', express.static(path.join(__dirname, 'generated_audio')));
+app.use('/generated_audio', express.static(path.join(__dirname, 'generated_audio'), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.wav')) {
+      res.set('Content-Type', 'audio/wav');
+      res.set('Cache-Control', 'no-cache');
+      res.set('Access-Control-Allow-Origin', '*');
+    }
+  }
+}));
 
 /**
  * 声音克隆端点（支持文件上传）
