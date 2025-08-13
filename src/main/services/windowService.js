@@ -39,6 +39,7 @@ export class WindowService {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
+        webSecurity: false, // 允许加载本地资源
         preload: join(__dirname, '../../preload.js')
       }
     });

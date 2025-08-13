@@ -196,7 +196,94 @@ export const RENDERING_CONFIG = {
   }
 };
 
-// GPT-SoVITS配置已移除
+// ==================== TTS 配置 ====================
+export const TTS_CONFIG = {
+  // Fish Speech API配置
+  API: {
+    BASE_URL: 'http://localhost:3002',
+    FISH_SPEECH_URL: 'http://localhost:8081', // 改为8081避免端口冲突
+    TIMEOUT: 60000,
+    RETRY_ATTEMPTS: 3,
+    RETRY_DELAY: 1000
+  },
+
+  // 语音克隆配置
+  VOICE_CLONING: {
+    // 参考音频文件路径（相对于项目根目录）
+    REFERENCE_AUDIO_PATH: './public/Audio/就因为卖相不好吗，口感明明很棒的呀.wav',
+
+    // 参考音频对应的文本
+    REFERENCE_TEXT: '就因为卖相不好吗，口感明明很棒的呀',
+
+    // 语言设置
+    LANGUAGE: 'zh',
+
+    // 音频格式
+    FORMAT: 'wav',
+
+    // 合成参数
+    SYNTHESIS_PARAMS: {
+      chunk_length: 200,
+      normalize: true,
+      temperature: 0.8,
+      top_p: 0.8,
+      repetition_penalty: 1.1
+    }
+  },
+
+  // 文本处理配置
+  TEXT_PROCESSING: {
+    // 是否启用表情符号过滤
+    FILTER_EMOJIS: true,
+
+    // 表情符号正则表达式
+    EMOJI_REGEX: /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+
+    // 其他需要过滤的字符
+    FILTER_PATTERNS: [
+      /\*[^*]*\*/g,  // 过滤 *动作* 格式
+      /\([^)]*\)/g,  // 过滤 (表情) 格式
+      /【[^】]*】/g,  // 过滤 【动作】 格式
+      /\[[^\]]*\]/g  // 过滤 [表情] 格式
+    ],
+
+    // 最大文本长度
+    MAX_TEXT_LENGTH: 500,
+
+    // 最小文本长度
+    MIN_TEXT_LENGTH: 1
+  },
+
+  // 音频播放配置
+  AUDIO_PLAYBACK: {
+    // 音频格式
+    SUPPORTED_FORMATS: ['wav', 'mp3', 'ogg'],
+
+    // 默认音量
+    DEFAULT_VOLUME: 0.8,
+
+    // 是否自动播放
+    AUTO_PLAY: true,
+
+    // 播放完成后是否自动删除临时文件
+    AUTO_CLEANUP: true
+  },
+
+  // 服务启动配置
+  SERVICE: {
+    // 是否在应用启动时自动启动TTS服务
+    AUTO_START: true,
+
+    // TTS服务启动超时时间（毫秒）
+    START_TIMEOUT: 30000,
+
+    // 健康检查间隔（毫秒）
+    HEALTH_CHECK_INTERVAL: 5000,
+
+    // 最大健康检查重试次数
+    MAX_HEALTH_CHECK_RETRIES: 10
+  }
+};
 
 // ==================== 日志配置 ====================
 export const LOGGING_CONFIG = {
@@ -220,8 +307,8 @@ export default {
   ANIMATION: ANIMATION_CONFIG,
   MEMORY: MEMORY_CONFIG,
   RENDERING: RENDERING_CONFIG,
+  TTS: TTS_CONFIG,
   LOGGING: LOGGING_CONFIG,
-
 
   // 工具函数
   validateUrl,

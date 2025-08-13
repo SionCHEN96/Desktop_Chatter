@@ -198,6 +198,19 @@ export class AIService {
         );
       }
 
+      // 检查和修复编码问题
+      if (content.includes('锛') || content.includes('鍚') || content.includes('浣')) {
+        console.log('[AIService] Detected encoding issue in AI response, attempting to fix...');
+        try {
+          // 尝试重新编码
+          const buffer = Buffer.from(content, 'latin1');
+          content = buffer.toString('utf8');
+          console.log('[AIService] AI response after encoding fix:', content.substring(0, 100) + '...');
+        } catch (encodingError) {
+          console.warn('[AIService] Failed to fix AI response encoding:', encodingError);
+        }
+      }
+
       // 移除<think>标签及其内容
       content = content.replace(/<think>[\s\S]*?<\/think>/g, '');
 

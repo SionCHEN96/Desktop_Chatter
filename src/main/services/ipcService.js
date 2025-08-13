@@ -12,9 +12,10 @@ import fs from 'fs';
  * 封装IPC通信相关的所有操作
  */
 export class IPCService {
-  constructor(aiService, windowService) {
+  constructor(aiService, windowService, ttsService = null) {
     this.aiService = aiService;
     this.windowService = windowService;
+    this.ttsService = ttsService;
     this.setupIPCHandlers();
   }
 
@@ -29,10 +30,30 @@ export class IPCService {
         console.log('[IPCService] Received message:', message);
         const response = await this.aiService.getAIResponse(message);
 
-        event.reply('response', response);
+        // 如果有TTS服务，尝试合成语音
+        let audioUrl = null;
+        if (this.ttsService) {
+          try {
+            console.log('[IPCService] Synthesizing speech for AI response...');
+            audioUrl = await this.ttsService.synthesizeText(response);
+            console.log('[IPCService] Speech synthesis completed:', audioUrl);
+          } catch (ttsError) {
+            console.warn('[IPCService] TTS synthesis failed:', ttsError.message);
+            // TTS失败不影响文本响应
+          }
+        }
+
+        // 发送响应（包含文本和音频URL）
+        event.reply('response', {
+          text: response,
+          audioUrl: audioUrl
+        });
       } catch (error) {
         console.error('[IPCService] Failed to get AI response:', error);
-        event.reply('response', '抱歉，处理您的请求时出现错误。');
+        event.reply('response', {
+          text: '抱歉，处理您的请求时出现错误。',
+          audioUrl: null
+        });
       }
     });
 
@@ -95,6 +116,54 @@ export class IPCService {
         };
       }
       return null;
+    });
+
+    // 处理获取TTS服务状态
+    ipcMain.handle('get-tts-status', () => {
+      if (this.ttsService) {
+        return this.ttsService.getServiceStatus();
+      }
+      return {
+        isRunning: false,
+        error: 'TTS service not available'
+      };
+    });
+
+    // 处理音频文件读取
+    ipcMain.handle('get-audio-file', async (event, audioUrl) => {
+      try {
+        console.log('[IPCService] Getting audio file:', audioUrl);
+
+        // 构建完整的URL
+        const fullUrl = audioUrl.startsWith('http')
+          ? audioUrl
+          : `http://localhost:3002${audioUrl}`;
+
+        console.log('[IPCService] Fetching from:', fullUrl);
+
+        const response = await fetch(fullUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audio: ${response.status}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        console.log('[IPCService] Audio file loaded, size:', buffer.length);
+
+        return {
+          success: true,
+          data: buffer.toString('base64'),
+          contentType: response.headers.get('content-type') || 'audio/wav',
+          size: buffer.length
+        };
+      } catch (error) {
+        console.error('[IPCService] Failed to get audio file:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
     });
 
 

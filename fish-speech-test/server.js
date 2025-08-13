@@ -10,6 +10,90 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import FormData from 'form-data';
 
+/**
+ * 修复文本编码问题
+ * @param {string} text - 原始文本
+ * @returns {string} 修复后的文本
+ */
+function fixTextEncoding(text) {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+
+  let fixedText = text;
+
+  // 检查是否包含常见的编码错误字符
+  const encodingIssuePatterns = ['锛', '鍚', '浣', '鎴', '鍙', '甯', '瑙', '鐞', '闂', '鍚'];
+  const hasEncodingIssue = encodingIssuePatterns.some(pattern => text.includes(pattern));
+
+  if (hasEncodingIssue) {
+    console.log('Detected encoding issue, attempting to fix...');
+    try {
+      const buffer = Buffer.from(text, 'latin1');
+      const utf8Text = buffer.toString('utf8');
+
+      // 简单检查：如果转换后包含更多常见中文字符，则使用转换后的文本
+      const commonChars = ['你', '好', '是', '的', '我', '在', '有', '了', '不', '和', '人', '这', '中', '大', '为'];
+      const utf8Score = commonChars.reduce((score, char) => score + (utf8Text.includes(char) ? 1 : 0), 0);
+      const originalScore = commonChars.reduce((score, char) => score + (text.includes(char) ? 1 : 0), 0);
+
+      if (utf8Score > originalScore) {
+        fixedText = utf8Text;
+        console.log('Encoding fix successful');
+      }
+    } catch (error) {
+      console.warn('Failed to fix encoding:', error);
+    }
+  }
+
+  return fixedText;
+}
+
+/**
+ * 清理文本内容
+ * @param {string} text - 原始文本
+ * @returns {string} 清理后的文本
+ */
+function cleanTextForTTS(text) {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+
+  let cleanedText = text;
+
+  // 过滤表情符号
+  const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
+  cleanedText = cleanedText.replace(emojiRegex, '');
+
+  // 过滤动作描述
+  const actionPatterns = [
+    /\*[^*]*\*/g,  // 过滤 *动作* 格式
+    /\([^)]*\)/g,  // 过滤 (表情) 格式
+    /【[^】]*】/g,  // 过滤 【动作】 格式
+    /\[[^\]]*\]/g  // 过滤 [表情] 格式
+  ];
+
+  actionPatterns.forEach(pattern => {
+    cleanedText = cleanedText.replace(pattern, '');
+  });
+
+  // 清理多余的空白字符
+  cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+
+  return cleanedText;
+}
+
+/**
+ * 综合文本处理
+ * @param {string} text - 原始文本
+ * @returns {string} 处理后的文本
+ */
+function processTextForTTS(text) {
+  const fixedText = fixTextEncoding(text);
+  const cleanedText = cleanTextForTTS(fixedText);
+  return cleanedText;
+}
+
 // ES模块中获取__dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,7 +104,7 @@ const PORT = 3002;
 // Fish Speech API配置
 const FISH_SPEECH_CONFIG = {
   // 本地Fish Speech API地址（如果本地部署）
-  LOCAL_API_URL: 'http://localhost:8080',
+  LOCAL_API_URL: 'http://localhost:8081',
   
   // Hugging Face Space API（备用）
   HF_SPACE_URL: 'https://fishaudio-openaudio-s1-mini.hf.space',
@@ -53,9 +137,91 @@ const FISH_SPEECH_CONFIG = {
 };
 
 // 中间件
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
+  exposedHeaders: ['Content-Length', 'Content-Range', 'Accept-Ranges'],
+  credentials: false
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// 静态文件服务，添加音频文件的特殊处理
+const generatedAudioPath = path.join(__dirname, 'generated_audio');
+console.log('[Server] Setting up static audio serving from:', generatedAudioPath);
+
+app.use('/generated_audio', express.static(generatedAudioPath, {
+  setHeaders: (res, filePath) => {
+    console.log('[Server] Serving audio file:', filePath);
+    if (filePath.endsWith('.wav')) {
+      res.setHeader('Content-Type', 'audio/wav');
+    } else if (filePath.endsWith('.mp3')) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+    }
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+}));
+
+// 添加音频目录列表功能
+app.get('/generated_audio/', (req, res) => {
+  try {
+    console.log('[Server] Audio directory listing requested');
+    const files = fs.readdirSync(generatedAudioPath)
+      .filter(file => file.endsWith('.wav') || file.endsWith('.mp3'))
+      .sort((a, b) => {
+        const statA = fs.statSync(path.join(generatedAudioPath, a));
+        const statB = fs.statSync(path.join(generatedAudioPath, b));
+        return statB.mtime - statA.mtime; // 最新的在前
+      });
+
+    console.log('[Server] Found audio files:', files.length);
+
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Generated Audio Files</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .file { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+          .file a { text-decoration: none; color: #007bff; font-weight: bold; }
+          .file .info { color: #666; font-size: 12px; margin-top: 5px; }
+        </style>
+      </head>
+      <body>
+        <h1>Generated Audio Files (${files.length} files)</h1>
+    `;
+
+    files.forEach(file => {
+      const filePath = path.join(generatedAudioPath, file);
+      const stats = fs.statSync(filePath);
+      const size = (stats.size / 1024).toFixed(2);
+      const mtime = stats.mtime.toLocaleString();
+
+      html += `
+        <div class="file">
+          <a href="/generated_audio/${file}" target="_blank">${file}</a>
+          <div class="info">Size: ${size} KB | Modified: ${mtime}</div>
+        </div>
+      `;
+    });
+
+    html += `
+      </body>
+      </html>
+    `;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    console.error('[Server] Error listing audio files:', error);
+    res.status(500).json({ error: 'Failed to list audio files' });
+  }
+});
+
 app.use(express.static(__dirname));
 
 /**
@@ -73,6 +239,75 @@ app.get('/api/health', (req, res) => {
       specialEffectsCount: FISH_SPEECH_CONFIG.SPECIAL_EFFECTS.length
     }
   });
+});
+
+// 音频文件列表API端点
+app.get('/api/audio/list', (req, res) => {
+  try {
+    const files = fs.readdirSync(generatedAudioPath)
+      .filter(file => file.endsWith('.wav') || file.endsWith('.mp3'))
+      .map(file => {
+        const filePath = path.join(generatedAudioPath, file);
+        const stats = fs.statSync(filePath);
+        return {
+          filename: file,
+          url: `/generated_audio/${file}`,
+          size: stats.size,
+          modified: stats.mtime.toISOString()
+        };
+      })
+      .sort((a, b) => new Date(b.modified) - new Date(a.modified));
+
+    res.json({
+      success: true,
+      files: files,
+      count: files.length
+    });
+  } catch (error) {
+    console.error('[Server] Error listing audio files:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to list audio files'
+    });
+  }
+});
+
+// 获取最新音频文件
+app.get('/api/audio/latest', (req, res) => {
+  try {
+    const files = fs.readdirSync(generatedAudioPath)
+      .filter(file => file.endsWith('.wav') || file.endsWith('.mp3'))
+      .map(file => {
+        const filePath = path.join(generatedAudioPath, file);
+        const stats = fs.statSync(filePath);
+        return {
+          filename: file,
+          url: `/generated_audio/${file}`,
+          fullUrl: `http://localhost:3002/generated_audio/${file}`,
+          size: stats.size,
+          modified: stats.mtime.toISOString()
+        };
+      })
+      .sort((a, b) => new Date(b.modified) - new Date(a.modified));
+
+    if (files.length > 0) {
+      res.json({
+        success: true,
+        latest: files[0]
+      });
+    } else {
+      res.json({
+        success: false,
+        error: 'No audio files found'
+      });
+    }
+  } catch (error) {
+    console.error('[Server] Error getting latest audio file:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get latest audio file'
+    });
+  }
 });
 
 /**
@@ -352,13 +587,17 @@ app.post('/api/tts', async (req, res) => {
     }
 
     console.log('TTS request for text:', text);
+
+    // 使用更强大的文本处理函数
+    let cleanedText = processTextForTTS(text);
+
     if (referenceAudio && referenceText) {
       console.log('Using voice cloning with reference audio');
     }
 
     // 检查Fish Speech服务是否可用
     try {
-      const healthResponse = await fetch('http://localhost:8080/v1/health');
+      const healthResponse = await fetch('http://localhost:8081/v1/health');
       if (!healthResponse.ok) {
         throw new Error('Fish Speech server not responding');
       }
@@ -371,7 +610,7 @@ app.post('/api/tts', async (req, res) => {
 
     // 构建Fish Speech API请求
     const ttsRequest = {
-      text: text,
+      text: cleanedText, // 使用清理后的文本
       format: "wav",
       chunk_length: 200,
       normalize: true,
@@ -398,7 +637,7 @@ app.post('/api/tts', async (req, res) => {
     }
 
     console.log('Sending TTS request to Fish Speech API...');
-    const ttsResponse = await fetch('http://localhost:8080/v1/tts', {
+    const ttsResponse = await fetch('http://localhost:8081/v1/tts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -409,8 +648,21 @@ app.post('/api/tts', async (req, res) => {
     if (!ttsResponse.ok) {
       const errorText = await ttsResponse.text();
       console.error('Fish Speech TTS failed:', ttsResponse.status, errorText);
+
+      // 尝试解析错误信息
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson.message || errorJson.error || errorText;
+      } catch (e) {
+        // 如果不是JSON，使用原始错误文本
+      }
+
       return res.status(500).json({
-        error: `Fish Speech TTS failed: ${ttsResponse.status}`
+        error: `Fish Speech TTS failed: ${ttsResponse.status}`,
+        details: errorDetails,
+        originalText: text,
+        cleanedText: cleanedText
       });
     }
 
@@ -488,7 +740,7 @@ app.post('/api/voice-clone', upload.single('referenceAudio'), async (req, res) =
 
     // 检查Fish Speech服务是否可用
     try {
-      const healthResponse = await fetch('http://localhost:8080/v1/health');
+      const healthResponse = await fetch('http://localhost:8081/v1/health');
       if (!healthResponse.ok) {
         throw new Error('Fish Speech server not responding');
       }
@@ -518,7 +770,7 @@ app.post('/api/voice-clone', upload.single('referenceAudio'), async (req, res) =
     };
 
     console.log('Sending voice cloning request to Fish Speech API...');
-    const ttsResponse = await fetch('http://localhost:8080/v1/tts', {
+    const ttsResponse = await fetch('http://localhost:8081/v1/tts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

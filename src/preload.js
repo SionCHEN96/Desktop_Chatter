@@ -4,5 +4,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sendMessage: (message) => ipcRenderer.send('message', message),
   onResponse: (callback) => ipcRenderer.on('response', callback),
   closeWindow: () => ipcRenderer.send('close-window'),
-  moveWindow: (deltaX, deltaY) => ipcRenderer.send('move-window', { deltaX, deltaY })
+  moveWindow: (deltaX, deltaY) => ipcRenderer.send('move-window', { deltaX, deltaY }),
+  getTTSStatus: () => ipcRenderer.invoke('get-tts-status'),
+  getAudioFile: (audioUrl) => ipcRenderer.invoke('get-audio-file', audioUrl)
 });

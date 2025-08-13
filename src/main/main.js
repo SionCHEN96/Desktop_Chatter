@@ -4,7 +4,7 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { AIService, WindowService, IPCService, MemoryService, TrayService } from './services/index.js';
+import { AIService, WindowService, IPCService, MemoryService, TrayService, TTSService } from './services/index.js';
 
 // 解决WebGL问题的命令行参数
 app.commandLine.appendSwitch('ignore-gpu-blacklist');
@@ -17,6 +17,7 @@ let aiService;
 let windowService;
 let ipcService;
 let trayService;
+let ttsService;
 
 /**
  * 初始化所有服务
@@ -24,6 +25,16 @@ let trayService;
  */
 async function initializeServices() {
   try {
+    // 初始化TTS服务（优先启动，因为需要时间）
+    ttsService = new TTSService();
+    console.log('[Main] Starting TTS service...');
+    const ttsStarted = await ttsService.startService();
+    if (ttsStarted) {
+      console.log('[Main] TTS service started successfully');
+    } else {
+      console.warn('[Main] TTS service failed to start, continuing without TTS');
+    }
+
     // 初始化内存服务
     memoryService = new MemoryService();
     await memoryService.initializeMemoryManager();
@@ -37,8 +48,8 @@ async function initializeServices() {
     // 初始化托盘服务
     trayService = new TrayService(windowService);
 
-    // 初始化IPC服务
-    ipcService = new IPCService(aiService, windowService);
+    // 初始化IPC服务（传入TTS服务）
+    ipcService = new IPCService(aiService, windowService, ttsService);
 
     console.log('[Main] All services initialized successfully');
   } catch (error) {
@@ -100,6 +111,11 @@ async function cleanupServices() {
     // 清理IPC监听器
     if (ipcService) {
       ipcService.removeAllListeners();
+    }
+
+    // 停止TTS服务
+    if (ttsService) {
+      await ttsService.stopService();
     }
 
     // 停止内存服务（包括ChromaDB）

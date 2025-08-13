@@ -14,8 +14,13 @@ export class MessageManager {
     this.aiMessageTimeoutDuration = 10000; // 10秒
     this.aiMessageTimeoutRemaining = 10000; // 剩余时间
     this.isHovered = false; // 是否悬停状态
+    this.currentAudio = null; // 当前播放的音频对象
+    this.audioQueue = []; // 音频播放队列
+    this.hasUserInteracted = false; // 用户是否已经交互过
+    this.pendingAudioUrl = null; // 等待播放的音频URL
 
     this.initContainer();
+    this.setupUserInteractionDetection();
   }
 
   /**
@@ -29,6 +34,38 @@ export class MessageManager {
     }
 
     this.container.classList.add('message-container');
+  }
+
+  /**
+   * 设置用户交互检测
+   * @private
+   */
+  setupUserInteractionDetection() {
+    const events = ['click', 'keydown', 'touchstart'];
+
+    const handleUserInteraction = () => {
+      if (!this.hasUserInteracted) {
+        console.log('[MessageManager] User interaction detected, enabling audio autoplay');
+        this.hasUserInteracted = true;
+
+        // 如果有等待播放的音频，现在播放它
+        if (this.pendingAudioUrl) {
+          console.log('[MessageManager] Playing pending audio:', this.pendingAudioUrl);
+          this.playAudio(this.pendingAudioUrl);
+          this.pendingAudioUrl = null;
+        }
+
+        // 移除事件监听器
+        events.forEach(event => {
+          document.removeEventListener(event, handleUserInteraction);
+        });
+      }
+    };
+
+    // 添加事件监听器
+    events.forEach(event => {
+      document.addEventListener(event, handleUserInteraction, { once: true });
+    });
   }
 
   /**
@@ -219,6 +256,12 @@ export class MessageManager {
    * @param {Object} message - 消息对象
    */
   renderAIMessage(message) {
+    console.log('[MessageManager] Rendering AI message:', {
+      text: message.text?.substring(0, 50) + '...',
+      hasAudioUrl: !!message.audioUrl,
+      audioUrl: message.audioUrl
+    });
+
     const messageElement = this.createMessageElement(message);
     messageElement.classList.add('ai-message-bubble');
 
@@ -231,6 +274,21 @@ export class MessageManager {
 
     // 添加到容器
     this.container.appendChild(messageElement);
+
+    // 如果有音频URL，播放音频
+    if (message.audioUrl) {
+      console.log('[MessageManager] Audio URL found, attempting to play:', message.audioUrl);
+
+      // 添加播放按钮到消息中
+      this.addAudioPlayButton(messageElement, message.audioUrl);
+
+      // 延迟一点播放，确保DOM元素已经渲染
+      setTimeout(() => {
+        this.playAudio(message.audioUrl);
+      }, 100);
+    } else {
+      console.log('[MessageManager] No audio URL provided for this message');
+    }
 
     // 动画通过CSS类自动触发，无需手动设置
   }
@@ -341,5 +399,480 @@ export class MessageManager {
     }
 
     this.resumeAIMessageTimeout();
+  }
+
+  /**
+   * 播放音频
+   * @param {string} audioUrl - 音频文件URL
+   */
+  async playAudio(audioUrl) {
+    try {
+      console.log('[MessageManager] Playing audio:', audioUrl);
+      console.log('[MessageManager] User has interacted:', this.hasUserInteracted);
+
+      // 如果用户还没有交互过，保存音频URL等待用户交互
+      if (!this.hasUserInteracted) {
+        console.log('[MessageManager] Waiting for user interaction before playing audio');
+        this.pendingAudioUrl = audioUrl;
+        this.showUserInteractionPrompt();
+        return;
+      }
+
+      // 停止当前播放的音频
+      this.stopCurrentAudio();
+
+      // 构建完整的音频URL
+      const fullAudioUrl = audioUrl.startsWith('http')
+        ? audioUrl
+        : `http://localhost:3002${audioUrl}`;
+
+      console.log('[MessageManager] Full audio URL:', fullAudioUrl);
+
+      // 使用Electron的IPC获取音频文件
+      let audioBlob;
+      try {
+        console.log('[MessageManager] Getting audio file via Electron IPC...');
+        const audioData = await window.electronAPI.getAudioFile(audioUrl);
+
+        if (!audioData.success) {
+          throw new Error(`Failed to get audio file: ${audioData.error}`);
+        }
+
+        console.log('[MessageManager] Audio file received via IPC, size:', audioData.size);
+
+        // 将base64数据转换为Blob
+        const binaryString = atob(audioData.data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        audioBlob = new Blob([bytes], { type: audioData.contentType });
+        const blobUrl = URL.createObjectURL(audioBlob);
+        fullAudioUrl = blobUrl;
+
+        console.log('[MessageManager] Created blob URL:', fullAudioUrl);
+
+      } catch (ipcError) {
+        console.error('[MessageManager] IPC audio fetch failed, trying direct fetch:', ipcError);
+
+        // 回退到直接fetch
+        try {
+          console.log('[MessageManager] Testing direct audio file accessibility...');
+          const testResponse = await fetch(fullAudioUrl, { method: 'HEAD' });
+          console.log('[MessageManager] Test response status:', testResponse.status);
+
+          if (!testResponse.ok) {
+            throw new Error(`Audio file not accessible: ${testResponse.status} ${testResponse.statusText}`);
+          }
+          console.log('[MessageManager] Direct audio file is accessible');
+        } catch (fetchError) {
+          console.error('[MessageManager] Direct fetch also failed:', fetchError);
+          throw fetchError;
+        }
+      }
+
+      // 创建音频对象
+      const audio = new Audio();
+      this.currentAudio = audio;
+
+      // 设置音频属性
+      audio.volume = 0.8;
+      audio.preload = 'auto';
+      audio.crossOrigin = 'anonymous'; // 添加跨域支持
+
+      // 添加详细的事件监听器
+      audio.addEventListener('loadstart', () => {
+        console.log('[MessageManager] Audio loading started');
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        console.log('[MessageManager] Audio metadata loaded, duration:', audio.duration);
+      });
+
+      audio.addEventListener('loadeddata', () => {
+        console.log('[MessageManager] Audio data loaded');
+      });
+
+      audio.addEventListener('canplay', () => {
+        console.log('[MessageManager] Audio can start playing');
+      });
+
+      audio.addEventListener('canplaythrough', () => {
+        console.log('[MessageManager] Audio can play through');
+      });
+
+      audio.addEventListener('play', () => {
+        console.log('[MessageManager] Audio playback started');
+      });
+
+      audio.addEventListener('playing', () => {
+        console.log('[MessageManager] Audio is playing');
+      });
+
+      audio.addEventListener('pause', () => {
+        console.log('[MessageManager] Audio paused');
+      });
+
+      audio.addEventListener('ended', () => {
+        console.log('[MessageManager] Audio playback ended');
+
+        // 清理blob URL
+        if (fullAudioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(fullAudioUrl);
+          console.log('[MessageManager] Blob URL cleaned up');
+        }
+
+        this.currentAudio = null;
+        this.playNextAudio();
+      });
+
+      audio.addEventListener('error', (event) => {
+        const error = audio.error;
+        console.error('[MessageManager] Audio playback error:', {
+          code: error?.code,
+          message: error?.message,
+          event: event
+        });
+
+        // 清理blob URL
+        if (fullAudioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(fullAudioUrl);
+          console.log('[MessageManager] Blob URL cleaned up after error');
+        }
+
+        // 详细的错误代码说明
+        if (error) {
+          switch (error.code) {
+            case 1:
+              console.error('[MessageManager] MEDIA_ERR_ABORTED: The fetching process for the media resource was aborted by the user agent');
+              break;
+            case 2:
+              console.error('[MessageManager] MEDIA_ERR_NETWORK: A network error caused the media download to fail');
+              break;
+            case 3:
+              console.error('[MessageManager] MEDIA_ERR_DECODE: An error occurred while decoding the media resource');
+              break;
+            case 4:
+              console.error('[MessageManager] MEDIA_ERR_SRC_NOT_SUPPORTED: The media resource is not supported');
+              break;
+            default:
+              console.error('[MessageManager] Unknown audio error');
+          }
+        }
+
+        this.currentAudio = null;
+        this.playNextAudio();
+      });
+
+      audio.addEventListener('stalled', () => {
+        console.warn('[MessageManager] Audio loading stalled');
+      });
+
+      audio.addEventListener('waiting', () => {
+        console.log('[MessageManager] Audio waiting for data');
+      });
+
+      // 设置音频源
+      audio.src = fullAudioUrl;
+      console.log('[MessageManager] Audio source set, attempting to load...');
+
+      // 开始加载
+      audio.load();
+
+      // 等待音频可以播放
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Audio load timeout'));
+        }, 10000); // 10秒超时
+
+        audio.addEventListener('canplay', () => {
+          clearTimeout(timeout);
+          resolve();
+        }, { once: true });
+
+        audio.addEventListener('error', () => {
+          clearTimeout(timeout);
+          reject(new Error('Audio load failed'));
+        }, { once: true });
+      });
+
+      console.log('[MessageManager] Audio loaded, starting playback...');
+
+      // 开始播放
+      console.log('[MessageManager] Attempting to play audio...');
+      const playPromise = audio.play();
+
+      if (playPromise !== undefined) {
+        try {
+          await playPromise;
+          console.log('[MessageManager] Audio play() promise resolved successfully');
+        } catch (playError) {
+          console.error('[MessageManager] Audio play() promise rejected:', {
+            name: playError.name,
+            message: playError.message,
+            code: playError.code
+          });
+
+          // 详细的错误处理
+          switch (playError.name) {
+            case 'NotAllowedError':
+              console.warn('[MessageManager] Autoplay was prevented by browser policy');
+              this.showAutoplayBlockedMessage();
+              break;
+            case 'NotSupportedError':
+              console.error('[MessageManager] Audio format not supported');
+              this.showErrorMessage('音频格式不支持');
+              break;
+            case 'AbortError':
+              console.warn('[MessageManager] Audio playback was aborted');
+              break;
+            default:
+              console.error('[MessageManager] Unknown audio playback error:', playError);
+              this.showErrorMessage('音频播放失败: ' + playError.message);
+          }
+          throw playError;
+        }
+      } else {
+        console.log('[MessageManager] Audio play() returned undefined (older browser)');
+      }
+
+    } catch (error) {
+      console.error('[MessageManager] Failed to play audio:', error);
+      this.currentAudio = null;
+      this.playNextAudio();
+
+      // 显示用户友好的错误信息
+      if (this.container) {
+        const errorElement = document.createElement('div');
+        errorElement.style.cssText = `
+          color: #ff6b6b;
+          font-size: 12px;
+          margin-top: 5px;
+          padding: 5px;
+          background: rgba(255, 107, 107, 0.1);
+          border-radius: 3px;
+        `;
+        errorElement.textContent = '🔇 音频播放失败';
+
+        if (this.currentAIMessage) {
+          this.currentAIMessage.appendChild(errorElement);
+
+          // 3秒后移除错误信息
+          setTimeout(() => {
+            if (errorElement.parentNode) {
+              errorElement.parentNode.removeChild(errorElement);
+            }
+          }, 3000);
+        }
+      }
+    }
+  }
+
+  /**
+   * 停止当前音频播放
+   */
+  stopCurrentAudio() {
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+        this.currentAudio = null;
+      } catch (error) {
+        console.error('[MessageManager] Error stopping audio:', error);
+      }
+    }
+  }
+
+  /**
+   * 播放队列中的下一个音频
+   * @private
+   */
+  playNextAudio() {
+    if (this.audioQueue.length > 0) {
+      const nextAudioUrl = this.audioQueue.shift();
+      this.playAudio(nextAudioUrl);
+    }
+  }
+
+  /**
+   * 添加音频到播放队列
+   * @param {string} audioUrl - 音频文件URL
+   */
+  queueAudio(audioUrl) {
+    if (this.currentAudio) {
+      // 如果正在播放音频，添加到队列
+      this.audioQueue.push(audioUrl);
+    } else {
+      // 如果没有音频在播放，直接播放
+      this.playAudio(audioUrl);
+    }
+  }
+
+  /**
+   * 添加音频播放按钮到消息元素
+   * @private
+   * @param {HTMLElement} messageElement - 消息元素
+   * @param {string} audioUrl - 音频URL
+   */
+  addAudioPlayButton(messageElement, audioUrl) {
+    const playButton = document.createElement('button');
+    playButton.style.cssText = `
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-left: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    `;
+    playButton.innerHTML = '🔊';
+    playButton.title = '播放语音';
+
+    playButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      console.log('[MessageManager] Manual play button clicked');
+      this.playAudio(audioUrl);
+    });
+
+    playButton.addEventListener('mouseenter', () => {
+      playButton.style.opacity = '1';
+    });
+
+    playButton.addEventListener('mouseleave', () => {
+      playButton.style.opacity = '0.8';
+    });
+
+    messageElement.appendChild(playButton);
+  }
+
+  /**
+   * 显示自动播放被阻止的消息
+   * @private
+   */
+  showAutoplayBlockedMessage() {
+    if (this.currentAIMessage) {
+      const playButton = document.createElement('button');
+      playButton.style.cssText = `
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+        margin-top: 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      `;
+      playButton.innerHTML = '🔊 点击播放语音';
+
+      playButton.addEventListener('click', () => {
+        // 用户点击后重新尝试播放
+        if (this.currentAudio && this.currentAudio.src) {
+          this.currentAudio.play().then(() => {
+            console.log('[MessageManager] Manual audio play successful');
+            playButton.remove();
+          }).catch(error => {
+            console.error('[MessageManager] Manual audio play failed:', error);
+          });
+        }
+      });
+
+      this.currentAIMessage.appendChild(playButton);
+    }
+  }
+
+  /**
+   * 显示错误消息
+   * @private
+   * @param {string} message - 错误消息
+   */
+  showErrorMessage(message) {
+    if (this.currentAIMessage) {
+      const errorElement = document.createElement('div');
+      errorElement.style.cssText = `
+        color: #dc3545;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      `;
+      errorElement.innerHTML = `<span>❌</span><span>${message}</span>`;
+
+      this.currentAIMessage.appendChild(errorElement);
+
+      // 5秒后自动移除
+      setTimeout(() => {
+        if (errorElement.parentNode) {
+          errorElement.parentNode.removeChild(errorElement);
+        }
+      }, 5000);
+    }
+  }
+
+  /**
+   * 显示用户交互提示
+   * @private
+   */
+  showUserInteractionPrompt() {
+    if (this.currentAIMessage && !this.currentAIMessage.querySelector('.interaction-prompt')) {
+      const promptElement = document.createElement('div');
+      promptElement.className = 'interaction-prompt';
+      promptElement.style.cssText = `
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      `;
+
+      promptElement.innerHTML = `
+        <span>🔊</span>
+        <span>点击任意位置启用语音播放</span>
+      `;
+
+      promptElement.addEventListener('click', () => {
+        this.hasUserInteracted = true;
+        if (this.pendingAudioUrl) {
+          this.playAudio(this.pendingAudioUrl);
+          this.pendingAudioUrl = null;
+        }
+        promptElement.remove();
+      });
+
+      promptElement.addEventListener('mouseenter', () => {
+        promptElement.style.backgroundColor = '#fff3cd';
+      });
+
+      this.currentAIMessage.appendChild(promptElement);
+    }
+  }
+
+  /**
+   * 清理音频资源
+   */
+  cleanup() {
+    this.stopCurrentAudio();
+    this.audioQueue = [];
   }
 }

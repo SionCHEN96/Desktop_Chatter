@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频播放测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 音频播放测试</h1>
+        
+        <div class="test-section">
+            <h3>1. TTS服务状态检查</h3>
+            <button onclick="checkTTSStatus()">检查TTS服务</button>
+            <div id="tts-status" class="status info">等待检查...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 音频文件访问测试</h3>
+            <button onclick="testAudioAccess()">测试音频文件访问</button>
+            <div id="audio-access-status" class="status info">等待测试...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 音频播放测试</h3>
+            <button onclick="testAudioPlayback()">测试音频播放</button>
+            <button onclick="stopAudio()">停止播放</button>
+            <div id="audio-playback-status" class="status info">等待测试...</div>
+            <audio id="test-audio" controls style="width: 100%; margin-top: 10px;"></audio>
+        </div>
+
+        <div class="test-section">
+            <h3>4. TTS合成测试</h3>
+            <input type="text" id="test-text" placeholder="输入要合成的文本" value="你好，这是一个测试" style="width: 300px; padding: 5px;">
+            <button onclick="testTTSSynthesis()">合成语音</button>
+            <div id="tts-synthesis-status" class="status info">等待测试...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 调试日志</h3>
+            <button onclick="clearLog()">清空日志</button>
+            <div id="debug-log" class="log">日志将显示在这里...</div>
+        </div>
+    </div>
+
+    <script>
+        let currentAudio = null;
+        
+        function log(message) {
+            const logElement = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        async function checkTTSStatus() {
+            try {
+                log('检查TTS服务状态...');
+                const response = await fetch('http://localhost:3002/api/health');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('TTS服务响应: ' + JSON.stringify(data));
+                    setStatus('tts-status', 'TTS服务正常运行', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                log('TTS服务检查失败: ' + error.message);
+                setStatus('tts-status', 'TTS服务不可用: ' + error.message, 'error');
+            }
+        }
+
+        async function testAudioAccess() {
+            try {
+                log('测试音频文件访问...');
+                
+                // 测试最近生成的音频文件
+                const testUrls = [
+                    'http://localhost:3002/generated_audio/tts_1755071135867.wav',
+                    'http://localhost:3002/generated_audio/'
+                ];
+
+                for (const url of testUrls) {
+                    try {
+                        const response = await fetch(url, { method: 'HEAD' });
+                        if (response.ok) {
+                            log(`音频文件可访问: ${url}`);
+                            setStatus('audio-access-status', '音频文件可访问', 'success');
+                            return;
+                        }
+                    } catch (e) {
+                        log(`音频文件访问失败: ${url} - ${e.message}`);
+                    }
+                }
+                
+                throw new Error('所有测试URL都无法访问');
+            } catch (error) {
+                log('音频文件访问测试失败: ' + error.message);
+                setStatus('audio-access-status', '音频文件不可访问: ' + error.message, 'error');
+            }
+        }
+
+        async function testAudioPlayback() {
+            try {
+                log('测试音频播放...');
+                
+                const audioUrl = 'http://localhost:3002/generated_audio/tts_1755071135867.wav';
+                const audio = new Audio(audioUrl);
+                currentAudio = audio;
+
+                audio.addEventListener('loadstart', () => log('音频开始加载'));
+                audio.addEventListener('loadedmetadata', () => log('音频元数据已加载'));
+                audio.addEventListener('canplay', () => log('音频可以播放'));
+                audio.addEventListener('play', () => log('音频开始播放'));
+                audio.addEventListener('ended', () => log('音频播放结束'));
+                audio.addEventListener('error', (e) => {
+                    log('音频播放错误: ' + JSON.stringify({
+                        code: audio.error?.code,
+                        message: audio.error?.message
+                    }));
+                });
+
+                // 设置到页面的audio元素
+                const testAudioElement = document.getElementById('test-audio');
+                testAudioElement.src = audioUrl;
+
+                await audio.play();
+                setStatus('audio-playback-status', '音频播放成功', 'success');
+                
+            } catch (error) {
+                log('音频播放测试失败: ' + error.message);
+                setStatus('audio-playback-status', '音频播放失败: ' + error.message, 'error');
+            }
+        }
+
+        function stopAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+                log('音频播放已停止');
+            }
+        }
+
+        async function testTTSSynthesis() {
+            try {
+                const text = document.getElementById('test-text').value;
+                if (!text.trim()) {
+                    throw new Error('请输入要合成的文本');
+                }
+
+                log('开始TTS合成: ' + text);
+                setStatus('tts-synthesis-status', '正在合成语音...', 'info');
+
+                const response = await fetch('http://localhost:3002/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        referenceAudio: null, // 使用服务器默认的参考音频
+                        referenceText: null
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                log('TTS合成成功: ' + JSON.stringify(result));
+                
+                if (result.audioUrl) {
+                    // 播放合成的音频
+                    const audioUrl = `http://localhost:3002${result.audioUrl}`;
+                    const audio = new Audio(audioUrl);
+                    currentAudio = audio;
+                    
+                    document.getElementById('test-audio').src = audioUrl;
+                    await audio.play();
+                    
+                    setStatus('tts-synthesis-status', '语音合成并播放成功', 'success');
+                } else {
+                    throw new Error('合成结果中没有音频URL');
+                }
+
+            } catch (error) {
+                log('TTS合成测试失败: ' + error.message);
+                setStatus('tts-synthesis-status', 'TTS合成失败: ' + error.message, 'error');
+            }
+        }
+
+        // 页面加载时自动检查TTS状态
+        window.addEventListener('load', () => {
+            log('页面加载完成，开始自动检查...');
+            checkTTSStatus();
+        });
+    </script>
+</body>
+</html>

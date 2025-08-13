@@ -66,10 +66,11 @@ export class ChatContainer {
   /**
    * 显示AI消息
    * @param {string} text - AI响应内容
+   * @param {string|null} audioUrl - 音频文件URL
    */
-  showAIMessage(text) {
-    // 添加AI消息
-    this.messageManager.addAIMessage(text);
+  showAIMessage(text, audioUrl = null) {
+    // 添加AI消息（包含音频URL）
+    this.messageManager.addAIMessage(text, { audioUrl });
 
     // 恢复输入状态
     this.inputManager.setProcessing(false);
