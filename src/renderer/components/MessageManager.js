@@ -279,8 +279,8 @@ export class MessageManager {
     if (message.audioUrl) {
       console.log('[MessageManager] Audio URL found, attempting to play:', message.audioUrl);
 
-      // 添加播放按钮到消息中
-      this.addAudioPlayButton(messageElement, message.audioUrl);
+      // 静默播放，不显示播放按钮
+      // this.addAudioPlayButton(messageElement, message.audioUrl);
 
       // 延迟一点播放，确保DOM元素已经渲染
       setTimeout(() => {
@@ -414,7 +414,7 @@ export class MessageManager {
       if (!this.hasUserInteracted) {
         console.log('[MessageManager] Waiting for user interaction before playing audio');
         this.pendingAudioUrl = audioUrl;
-        this.showUserInteractionPrompt();
+        // 静默等待，不显示用户交互提示
         return;
       }
 
@@ -614,22 +614,23 @@ export class MessageManager {
             code: playError.code
           });
 
-          // 详细的错误处理
+          // 详细的错误处理（静默记录）
           switch (playError.name) {
             case 'NotAllowedError':
               console.warn('[MessageManager] Autoplay was prevented by browser policy');
-              this.showAutoplayBlockedMessage();
+              // 静默处理，不显示提示
               break;
             case 'NotSupportedError':
               console.error('[MessageManager] Audio format not supported');
-              this.showErrorMessage('音频格式不支持');
+              // 静默处理，不显示提示
               break;
             case 'AbortError':
               console.warn('[MessageManager] Audio playback was aborted');
+              // 静默处理，不显示提示
               break;
             default:
               console.error('[MessageManager] Unknown audio playback error:', playError);
-              this.showErrorMessage('音频播放失败: ' + playError.message);
+              // 静默处理，不显示提示
           }
           throw playError;
         }
@@ -642,30 +643,8 @@ export class MessageManager {
       this.currentAudio = null;
       this.playNextAudio();
 
-      // 显示用户友好的错误信息
-      if (this.container) {
-        const errorElement = document.createElement('div');
-        errorElement.style.cssText = `
-          color: #ff6b6b;
-          font-size: 12px;
-          margin-top: 5px;
-          padding: 5px;
-          background: rgba(255, 107, 107, 0.1);
-          border-radius: 3px;
-        `;
-        errorElement.textContent = '🔇 音频播放失败';
-
-        if (this.currentAIMessage) {
-          this.currentAIMessage.appendChild(errorElement);
-
-          // 3秒后移除错误信息
-          setTimeout(() => {
-            if (errorElement.parentNode) {
-              errorElement.parentNode.removeChild(errorElement);
-            }
-          }, 3000);
-        }
-      }
+      // 静默处理错误，不显示错误信息
+      // 错误已记录在控制台中
     }
   }
 

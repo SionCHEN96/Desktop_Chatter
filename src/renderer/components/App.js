@@ -66,14 +66,14 @@ export class App {
 
       if (ttsStatus.isRunning) {
         console.log('[App] TTS service is running');
-        this.chatContainer.showSystemMessage('🎵 语音合成服务已启动');
+        // 静默运行，不显示系统消息
       } else {
         console.warn('[App] TTS service is not running');
-        this.chatContainer.showSystemMessage('⚠️ 语音合成服务未启动，将仅显示文字回复');
+        // 静默运行，不显示系统消息
       }
     } catch (error) {
       console.error('[App] Failed to check TTS status:', error);
-      this.chatContainer.showSystemMessage('❌ 无法检查语音合成服务状态');
+      // 静默运行，不显示系统消息
     }
   }
 }
