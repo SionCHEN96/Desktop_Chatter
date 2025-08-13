@@ -4,7 +4,7 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { AIService, WindowService, IPCService, MemoryService, TrayService, TTSService } from './services/index.js';
+import { AIService, WindowService, IPCService, MemoryService, TrayService, TTSService, CleanupService } from './services/index.js';
 
 // 解决WebGL问题的命令行参数
 app.commandLine.appendSwitch('ignore-gpu-blacklist');
@@ -18,6 +18,7 @@ let windowService;
 let ipcService;
 let trayService;
 let ttsService;
+let cleanupService;
 
 /**
  * 初始化所有服务
@@ -25,6 +26,9 @@ let ttsService;
  */
 async function initializeServices() {
   try {
+    // 初始化清理服务
+    cleanupService = new CleanupService();
+
     // 初始化TTS服务（优先启动，因为需要时间）
     ttsService = new TTSService();
     console.log('[Main] Starting TTS service...');
@@ -45,8 +49,8 @@ async function initializeServices() {
     // 初始化窗口服务
     windowService = new WindowService();
 
-    // 初始化托盘服务
-    trayService = new TrayService(windowService);
+    // 初始化托盘服务（传入清理服务）
+    trayService = new TrayService(windowService, cleanupService);
 
     // 初始化IPC服务（传入TTS服务）
     ipcService = new IPCService(aiService, windowService, ttsService);
@@ -93,9 +97,41 @@ app.on('window-all-closed', () => {
 /**
  * 应用退出前清理
  */
-app.on('before-quit', async () => {
-  console.log('[Main] Application is quitting, cleaning up...');
-  await cleanupServices();
+app.on('before-quit', async (event) => {
+  console.log('[Main] Application is about to quit, cleaning up...');
+  event.preventDefault(); // 阻止默认退出行为
+
+  // 设置退出超时，防止清理过程卡住
+  const exitTimeout = setTimeout(() => {
+    console.warn('[Main] Cleanup timeout, forcing exit...');
+    app.exit(1);
+  }, 15000); // 15秒超时
+
+  try {
+    await cleanupServices();
+    clearTimeout(exitTimeout);
+
+    // 清理完成后真正退出
+    console.log('[Main] Cleanup completed, exiting application...');
+    app.exit(0);
+  } catch (error) {
+    console.error('[Main] Cleanup failed, forcing exit:', error);
+    clearTimeout(exitTimeout);
+    app.exit(1);
+  }
+});
+
+/**
+ * 处理应用激活（macOS）
+ */
+app.on('activate', () => {
+  // 在macOS上，当点击dock图标并且没有其他窗口打开时，
+  // 通常会重新创建一个窗口
+  if (BrowserWindow.getAllWindows().length === 0) {
+    if (windowService) {
+      windowService.createMainWindow();
+    }
+  }
 });
 
 /**
@@ -103,28 +139,48 @@ app.on('before-quit', async () => {
  */
 async function cleanupServices() {
   try {
-    // 清理托盘
-    if (trayService) {
-      trayService.destroy();
-    }
+    console.log('[Main] Starting comprehensive cleanup...');
 
-    // 清理IPC监听器
-    if (ipcService) {
-      ipcService.removeAllListeners();
-    }
+    if (cleanupService) {
+      // 使用专门的清理服务进行完整清理
+      await cleanupService.performFullCleanup({
+        trayService,
+        ipcService,
+        ttsService,
+        memoryService
+      });
+    } else {
+      // 回退到基本清理
+      console.log('[Main] Using fallback cleanup...');
 
-    // 停止TTS服务
-    if (ttsService) {
-      await ttsService.stopService();
-    }
+      if (trayService) {
+        trayService.destroy();
+      }
 
-    // 停止内存服务（包括ChromaDB）
-    if (memoryService) {
-      await memoryService.stopService();
+      if (ipcService) {
+        ipcService.removeAllListeners();
+      }
+
+      if (ttsService) {
+        await ttsService.stopService();
+      }
+
+      if (memoryService) {
+        await memoryService.stopService();
+      }
     }
 
     console.log('[Main] Services cleanup completed');
   } catch (error) {
     console.error('[Main] Error during services cleanup:', error);
+
+    // 如果正常清理失败，尝试快速清理
+    if (cleanupService) {
+      try {
+        await cleanupService.quickCleanup();
+      } catch (quickError) {
+        console.error('[Main] Quick cleanup also failed:', quickError);
+      }
+    }
   }
 }

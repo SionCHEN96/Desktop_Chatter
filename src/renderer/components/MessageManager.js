@@ -45,12 +45,10 @@ export class MessageManager {
 
     const handleUserInteraction = () => {
       if (!this.hasUserInteracted) {
-        console.log('[MessageManager] User interaction detected, enabling audio autoplay');
         this.hasUserInteracted = true;
 
         // 如果有等待播放的音频，现在播放它
         if (this.pendingAudioUrl) {
-          console.log('[MessageManager] Playing pending audio:', this.pendingAudioUrl);
           this.playAudio(this.pendingAudioUrl);
           this.pendingAudioUrl = null;
         }

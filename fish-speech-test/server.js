@@ -392,19 +392,7 @@ app.get('/api/fish-speech/status', async (req, res) => {
     console.log('❌ 所有Fish Speech服务都不可用');
     res.json({
       status: 'unavailable',
-      type: 'demo',
-      message: 'Fish Speech服务不可用，使用演示模式',
-      suggestions: [
-        '1. 运行 quick_deploy.bat 部署本地服务',
-        '2. 运行 start_fish_speech.bat 启动服务',
-        '3. 等待服务启动完成（1-2分钟）',
-        '4. 刷新页面重新检查'
-      ],
-      deploymentGuide: {
-        quickDeploy: 'quick_deploy.bat',
-        startService: 'start_fish_speech.bat',
-        checkService: 'node check_fish_speech.js'
-      },
+      message: 'Fish Speech服务不可用',
       timestamp: new Date().toISOString()
     });
 
@@ -955,25 +943,14 @@ async function synthesizeWithDirectAPI(params) {
 }
 
 /**
- * 使用备用TTS服务
+ * 备用TTS服务（当Fish Speech不可用时）
  */
 async function synthesizeWithBackupTTS(params) {
   try {
-    console.log('使用备用TTS服务（演示模式）...');
-
-    // 创建一个包含提示信息的音频
-    const demoText = `Fish Speech演示模式。您输入的文本是：${params.text.substring(0, 50)}${params.text.length > 50 ? '...' : ''}`;
-    const mockAudio = await generateDemoAudio(demoText, params.language);
-
-    return new Response(mockAudio, {
-      headers: {
-        'Content-Type': 'audio/wav',
-        'Content-Length': mockAudio.length
-      }
-    });
-
+    console.log('Fish Speech服务不可用，无法进行语音合成');
+    throw new Error('Fish Speech service unavailable');
   } catch (error) {
-    console.log('备用TTS失败:', error.message);
+    console.log('TTS服务失败:', error.message);
     throw error;
   }
 }

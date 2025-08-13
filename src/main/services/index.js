@@ -10,3 +10,4 @@ export { MemoryService } from './memoryService.js';
 export { ChromaService } from './chromaService.js';
 export { TrayService } from './trayService.js';
 export { TTSService } from './ttsService.js';
+export { CleanupService } from './cleanupService.js';

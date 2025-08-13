@@ -16,9 +16,10 @@ const __dirname = dirname(__filename);
  * 封装系统托盘相关的所有操作
  */
 export class TrayService {
-  constructor(windowService) {
+  constructor(windowService, cleanupService = null) {
     this.tray = null;
     this.windowService = windowService;
+    this.cleanupService = cleanupService;
   }
 
   /**
@@ -269,9 +270,23 @@ export class TrayService {
   /**
    * 处理退出按钮点击
    */
-  handleQuitClick() {
-    console.log('[TrayService] Quit clicked - 退出应用');
-    app.quit();
+  async handleQuitClick() {
+    console.log('[TrayService] Quit clicked - 开始安全退出应用');
+
+    try {
+      // 如果有清理服务，先进行快速清理
+      if (this.cleanupService) {
+        console.log('[TrayService] Performing cleanup before quit...');
+        await this.cleanupService.quickCleanup();
+      }
+
+      // 退出应用
+      app.quit();
+    } catch (error) {
+      console.error('[TrayService] Error during quit cleanup:', error);
+      // 即使清理失败也要退出应用
+      app.quit();
+    }
   }
 
   /**
