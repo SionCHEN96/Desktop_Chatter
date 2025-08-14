@@ -69,8 +69,19 @@ export class ChatContainer {
    * @param {string|null} audioUrl - 音频文件URL
    */
   showAIMessage(text, audioUrl = null) {
-    // 添加AI消息（包含音频URL）
-    this.messageManager.addAIMessage(text, { audioUrl });
+    // Check text length to decide whether to use segmented TTS
+    const shouldUseSegmentedTTS = !audioUrl && text.length > 50;
+
+    if (shouldUseSegmentedTTS) {
+      console.log('[ChatContainer] Using segmented TTS for long text:', text.length, 'characters');
+      // Use segmented speech synthesis
+      this.messageManager.addAIMessage(text, {
+        enableSegmentedTTS: true
+      });
+    } else {
+      // Use traditional method (existing audio URL or short text)
+      this.messageManager.addAIMessage(text, { audioUrl });
+    }
 
     // 恢复输入状态
     this.inputManager.setProcessing(false);

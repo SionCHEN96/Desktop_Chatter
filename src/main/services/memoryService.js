@@ -1,6 +1,6 @@
 /**
- * 内存管理服务
- * 负责初始化和管理内存管理器，集成ChromaDB服务
+ * Memory Management Service
+ * Responsible for initializing and managing memory manager, integrating ChromaDB service
  */
 
 import { MemoryManagerFactory } from '../../core/memory/index.js';
@@ -10,8 +10,8 @@ import { createLogger } from '../../utils/index.js';
 const logger = createLogger('MemoryService');
 
 /**
- * 内存服务类
- * 封装内存管理相关的所有操作，集成ChromaDB自动启动
+ * Memory Service Class
+ * Encapsulates all memory management operations, integrates ChromaDB auto-start
  */
 export class MemoryService {
   constructor() {
@@ -20,9 +20,9 @@ export class MemoryService {
   }
 
   /**
-   * 初始化内存管理器
-   * 自动启动ChromaDB服务并初始化内存管理器
-   * @returns {Promise<Object|null>} 内存管理器实例
+   * Initialize memory manager
+   * Auto-start ChromaDB service and initialize memory manager
+   * @returns {Promise<Object|null>} Memory manager instance
    */
   async initializeMemoryManager() {
     try {

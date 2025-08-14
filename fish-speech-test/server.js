@@ -1,6 +1,6 @@
 /**
- * Fish Speech 测试服务器
- * 提供Fish Speech API的代理和测试网页服务
+ * Fish Speech Test Server
+ * Provides Fish Speech API proxy and test web services
  */
 
 import express from 'express';
@@ -11,9 +11,9 @@ import { fileURLToPath } from 'url';
 import FormData from 'form-data';
 
 /**
- * 修复文本编码问题
- * @param {string} text - 原始文本
- * @returns {string} 修复后的文本
+ * Fix text encoding issues
+ * @param {string} text - Original text
+ * @returns {string} Fixed text
  */
 function fixTextEncoding(text) {
   if (!text || typeof text !== 'string') {
@@ -22,27 +22,27 @@ function fixTextEncoding(text) {
 
   let fixedText = text;
 
-  // 检查是否包含常见的编码错误字符
+  // Check for common encoding error characters
   const encodingIssuePatterns = ['锛', '鍚', '浣', '鎴', '鍙', '甯', '瑙', '鐞', '闂', '鍚'];
   const hasEncodingIssue = encodingIssuePatterns.some(pattern => text.includes(pattern));
 
   if (hasEncodingIssue) {
-    console.log('Detected encoding issue, attempting to fix...');
+    console.log('[Server] Detected encoding issue, attempting to fix...');
     try {
       const buffer = Buffer.from(text, 'latin1');
       const utf8Text = buffer.toString('utf8');
 
-      // 简单检查：如果转换后包含更多常见中文字符，则使用转换后的文本
+      // Simple check: if converted text contains more common Chinese characters, use converted text
       const commonChars = ['你', '好', '是', '的', '我', '在', '有', '了', '不', '和', '人', '这', '中', '大', '为'];
       const utf8Score = commonChars.reduce((score, char) => score + (utf8Text.includes(char) ? 1 : 0), 0);
       const originalScore = commonChars.reduce((score, char) => score + (text.includes(char) ? 1 : 0), 0);
 
       if (utf8Score > originalScore) {
         fixedText = utf8Text;
-        console.log('Encoding fix successful');
+        console.log('[Server] Encoding fix successful');
       }
     } catch (error) {
-      console.warn('Failed to fix encoding:', error);
+      console.warn('[Server] Failed to fix encoding:', error);
     }
   }
 
@@ -50,9 +50,9 @@ function fixTextEncoding(text) {
 }
 
 /**
- * 清理文本内容
- * @param {string} text - 原始文本
- * @returns {string} 清理后的文本
+ * Clean text content
+ * @param {string} text - Original text
+ * @returns {string} Cleaned text
  */
 function cleanTextForTTS(text) {
   if (!text || typeof text !== 'string') {
@@ -84,9 +84,9 @@ function cleanTextForTTS(text) {
 }
 
 /**
- * 综合文本处理
- * @param {string} text - 原始文本
- * @returns {string} 处理后的文本
+ * Comprehensive text processing
+ * @param {string} text - Original text
+ * @returns {string} Processed text
  */
 function processTextForTTS(text) {
   const fixedText = fixTextEncoding(text);
@@ -94,22 +94,22 @@ function processTextForTTS(text) {
   return cleanedText;
 }
 
-// ES模块中获取__dirname
+// Get __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3002;
 
-// Fish Speech API配置
+// Fish Speech API configuration
 const FISH_SPEECH_CONFIG = {
-  // 本地Fish Speech API地址（如果本地部署）
+  // Local Fish Speech API address (if deployed locally)
   LOCAL_API_URL: 'http://localhost:8081',
-  
-  // Hugging Face Space API（备用）
+
+  // Hugging Face Space API (backup)
   HF_SPACE_URL: 'https://fishaudio-openaudio-s1-mini.hf.space',
-  
-  // 支持的语言
+
+  // Supported languages
   SUPPORTED_LANGUAGES: [
     'en', 'zh', 'ja', 'de', 'fr', 'es', 'ko', 'ar', 'ru', 'nl', 'it', 'pl', 'pt'
   ],
@@ -323,13 +323,13 @@ app.get('/api/config', (req, res) => {
 });
 
 /**
- * 检查Fish Speech服务状态
+ * Check Fish Speech service status
  */
 app.get('/api/fish-speech/status', async (req, res) => {
   try {
-    console.log('检查Fish Speech服务状态...');
+    console.log('[Server] Checking Fish Speech service status...');
 
-    // 尝试连接本地Fish Speech API
+    // Try to connect to local Fish Speech API
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -343,13 +343,13 @@ app.get('/api/fish-speech/status', async (req, res) => {
 
       if (response.ok) {
         const responseText = await response.text();
-        console.log('✅ 本地Fish Speech服务可用');
+        console.log('[Server] ✅ Local Fish Speech service available');
 
         res.json({
           status: 'available',
           type: 'local',
           url: FISH_SPEECH_CONFIG.LOCAL_API_URL,
-          message: '本地Fish Speech服务可用',
+          message: 'Local Fish Speech service available',
           response: responseText,
           timestamp: new Date().toISOString()
         });
@@ -357,11 +357,11 @@ app.get('/api/fish-speech/status', async (req, res) => {
       }
     } catch (localError) {
       clearTimeout(timeoutId);
-      console.log('本地服务检查失败:', localError.message);
+      console.log('[Server] Local service check failed:', localError.message);
     }
 
-    // 本地服务不可用，检查Hugging Face Space
-    console.log('检查Hugging Face Space...');
+    // Local service unavailable, check Hugging Face Space
+    console.log('[Server] Checking Hugging Face Space...');
     try {
       const hfController = new AbortController();
       const hfTimeoutId = setTimeout(() => hfController.abort(), 10000);
@@ -592,7 +592,7 @@ app.post('/api/tts', async (req, res) => {
     } catch (healthError) {
       console.error('Fish Speech health check failed:', healthError);
       return res.status(503).json({
-        error: 'Fish Speech server is not available. Please make sure it is running on port 8080.'
+        error: 'Fish Speech server is not available. Please make sure it is running on port 8081.'
       });
     }
 
@@ -735,7 +735,7 @@ app.post('/api/voice-clone', upload.single('referenceAudio'), async (req, res) =
     } catch (healthError) {
       console.error('Fish Speech health check failed:', healthError);
       return res.status(503).json({
-        error: 'Fish Speech server is not available. Please make sure it is running on port 8080.'
+        error: 'Fish Speech server is not available. Please make sure it is running on port 8081.'
       });
     }
 

@@ -28,23 +28,23 @@ export class TrayService {
   createTray() {
     try {
       // 直接使用可爱的默认图标
-      console.log('[TrayService] 创建可爱的托盘图标...');
+      console.log('[TrayService] Creating tray icon...');
       const trayIcon = this.createDefaultIcon();
 
       this.tray = new Tray(trayIcon);
 
-      // 设置托盘提示文本
+      // Set tray tooltip text
       this.tray.setToolTip('AI Companion');
 
-      // 创建右键菜单
+      // Create context menu
       this.createContextMenu();
 
-      // 添加双击事件处理
+      // Add double-click event handler
       this.tray.on('double-click', () => {
         this.handleDoubleClick();
       });
 
-      console.log('[TrayService] 系统托盘创建成功');
+      console.log('[TrayService] System tray created successfully');
     } catch (error) {
       console.error('[TrayService] 创建系统托盘失败:', error);
     }
@@ -234,75 +234,75 @@ export class TrayService {
   }
 
   /**
-   * 处理双击托盘图标
+   * Handle tray icon double-click
    */
   handleDoubleClick() {
-    console.log('[TrayService] Tray icon double-clicked - 将窗口置于顶层');
+    console.log('[TrayService] Tray icon double-clicked - bringing window to front');
     const mainWindow = this.windowService.getMainWindow();
 
     if (mainWindow) {
-      // 如果窗口被最小化，先恢复
+      // If window is minimized, restore it first
       if (mainWindow.isMinimized()) {
         mainWindow.restore();
       }
 
-      // 显示窗口
+      // Show window
       mainWindow.show();
 
-      // 将窗口置于顶层
+      // Bring window to front
       mainWindow.focus();
       mainWindow.moveTop();
 
-      console.log('[TrayService] 窗口已置于顶层');
+      console.log('[TrayService] Window brought to front');
     } else {
-      console.error('[TrayService] 主窗口不存在');
+      console.error('[TrayService] Main window does not exist');
     }
   }
 
   /**
-   * 处理设置按钮点击
+   * Handle settings button click
    */
   handleSettingsClick() {
-    console.log('[TrayService] Settings clicked - 暂时不响应');
-    // 这里暂时不做任何操作，按照需求
+    console.log('[TrayService] Settings clicked - no action for now');
+    // No action for now, as per requirements
   }
 
   /**
-   * 处理退出按钮点击
+   * Handle quit button click
    */
   async handleQuitClick() {
-    console.log('[TrayService] Quit clicked - 开始安全退出应用');
+    console.log('[TrayService] Quit clicked - starting safe application exit');
 
     try {
-      // 如果有清理服务，先进行快速清理
+      // If cleanup service is available, perform quick cleanup first
       if (this.cleanupService) {
         console.log('[TrayService] Performing cleanup before quit...');
         await this.cleanupService.quickCleanup();
       }
 
-      // 退出应用
+      // Exit application
       app.quit();
     } catch (error) {
       console.error('[TrayService] Error during quit cleanup:', error);
-      // 即使清理失败也要退出应用
+      // Exit application even if cleanup fails
       app.quit();
     }
   }
 
   /**
-   * 销毁托盘
+   * Destroy tray
    */
   destroy() {
     if (this.tray) {
       this.tray.destroy();
       this.tray = null;
-      console.log('[TrayService] 系统托盘已销毁');
+      console.log('[TrayService] System tray destroyed');
     }
   }
 
   /**
-   * 获取托盘实例
-   * @returns {Tray|null} 托盘实例
+   * Get tray instance
+   * @returns {Tray|null} Tray instance
    */
   getTray() {
     return this.tray;

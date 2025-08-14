@@ -23,8 +23,8 @@ export class WindowService {
   }
 
   /**
-   * 创建主窗口
-   * @returns {BrowserWindow} 创建的窗口实例
+   * Create main window
+   * @returns {BrowserWindow} Created window instance
    */
   createMainWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -34,23 +34,23 @@ export class WindowService {
       height: WINDOW_CONFIG.height,
       transparent: WINDOW_CONFIG.transparent,
       frame: WINDOW_CONFIG.frame,
-      show: WINDOW_CONFIG.show !== false,  // 使用配置中的show属性
-      skipTaskbar: WINDOW_CONFIG.skipTaskbar || false,  // 不在任务栏显示
+      show: WINDOW_CONFIG.show !== false,  // Use show property from config
+      skipTaskbar: WINDOW_CONFIG.skipTaskbar || false,  // Don't show in taskbar
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        webSecurity: false, // 允许加载本地资源
+        webSecurity: false, // Allow loading local resources
         preload: join(__dirname, '../../preload.js')
       }
     });
 
-    // 加载HTML文件
+    // Load HTML file
     this.mainWindow.loadFile(join(__dirname, '../../../index.html'));
 
-    // 初始化@electron/remote模块
+    // Initialize @electron/remote module
     remoteMain.enable(this.mainWindow.webContents);
 
-    // 开发环境下启用开发者工具
+    // Enable developer tools in development environment
     if (process.env.NODE_ENV === 'development') {
       this.mainWindow.webContents.openDevTools();
     }
@@ -59,15 +59,15 @@ export class WindowService {
   }
 
   /**
-   * 获取主窗口实例
-   * @returns {BrowserWindow|null} 主窗口实例
+   * Get main window instance
+   * @returns {BrowserWindow|null} Main window instance
    */
   getMainWindow() {
     return this.mainWindow;
   }
 
   /**
-   * 关闭主窗口
+   * Close main window
    */
   closeMainWindow() {
     if (this.mainWindow) {
@@ -77,7 +77,7 @@ export class WindowService {
   }
 
   /**
-   * 最小化主窗口
+   * Minimize main window
    */
   minimizeMainWindow() {
     if (this.mainWindow) {

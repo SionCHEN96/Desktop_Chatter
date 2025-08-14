@@ -3,6 +3,9 @@
  * 负责消息的显示、存储和管理
  */
 
+import { segmentText } from '../../utils/textSegmentation.js';
+import { AudioQueue } from './AudioQueue.js';
+
 export class MessageManager {
   constructor(containerElement) {
     this.container = containerElement;
@@ -18,6 +21,9 @@ export class MessageManager {
     this.audioQueue = []; // 音频播放队列
     this.hasUserInteracted = false; // 用户是否已经交互过
     this.pendingAudioUrl = null; // 等待播放的音频URL
+    this.segmentedAudioQueue = new AudioQueue(); // 分段音频队列
+    this.bubbleDisplayTimer = null; // 气泡显示计时器
+    this.maxBubbleDisplayTime = 30000; // 最大气泡显示时间（30秒）
 
     this.initContainer();
     this.setupUserInteractionDetection();
@@ -46,6 +52,9 @@ export class MessageManager {
     const handleUserInteraction = () => {
       if (!this.hasUserInteracted) {
         this.hasUserInteracted = true;
+
+        // 通知分段音频队列用户已交互
+        this.segmentedAudioQueue.setUserInteraction(true);
 
         // 如果有等待播放的音频，现在播放它
         if (this.pendingAudioUrl) {
@@ -119,13 +128,171 @@ export class MessageManager {
       }
     }
 
-    // 显示新的AI消息
-    this.renderAIMessage(message);
-
-    // 设置10秒后自动消失
-    this.startAIMessageTimeout();
+    // 检查是否启用分段语音合成
+    if (options.enableSegmentedTTS && !message.audioUrl) {
+      // 使用分段语音合成
+      this.addAIMessageWithSegmentedTTS(message);
+    } else {
+      // 使用传统方式显示消息
+      this.renderAIMessage(message);
+      // 设置10秒后自动消失
+      this.startAIMessageTimeout();
+    }
 
     return message;
+  }
+
+  /**
+   * 添加AI消息并进行分段语音合成
+   * @param {Object} message - 消息对象
+   */
+  async addAIMessageWithSegmentedTTS(message) {
+    console.log('[MessageManager] Starting segmented TTS for message:', message.text.substring(0, 50) + '...');
+
+    // 对文本进行分段
+    const textSegments = segmentText(message.text, {
+      maxSegmentLength: 80,
+      minSegmentLength: 8,
+      preferredLength: 40
+    });
+
+    console.log('[MessageManager] Text segmented into', textSegments.length, 'parts:', textSegments);
+
+    // 开始分段语音合成
+    this.segmentedAudioQueue.startSegmentedSynthesis(
+      textSegments,
+      (text) => this.synthesizeTextSegment(text),
+      {
+        onSegmentReady: (segment) => {
+          console.log('[MessageManager] First segment ready, showing AI bubble');
+          // 第一段准备好时显示AI气泡
+          this.renderAIMessage(message);
+          // 启动30秒显示计时器
+          this.startBubbleDisplayTimer();
+        },
+        onAllComplete: () => {
+          console.log('[MessageManager] All segments completed');
+          // 所有段落播放完成，可以清除气泡（如果还没超时）
+          this.clearBubbleIfNotTimeout();
+        },
+        onError: (error) => {
+          console.error('[MessageManager] Segmented TTS error:', error);
+          // 出错时仍然显示消息，但没有语音
+          this.renderAIMessage(message);
+          this.startAIMessageTimeout();
+
+          // 显示错误提示（可选）
+          this.showTTSErrorHint(error);
+        }
+      }
+    );
+  }
+
+  /**
+   * 合成文本段落的语音
+   * @param {string} text - 文本段落
+   * @returns {Promise<string>} 音频URL
+   */
+  async synthesizeTextSegment(text) {
+    const startTime = Date.now();
+
+    try {
+      console.log('[MessageManager] Synthesizing text segment:', text.substring(0, 30) + '...');
+
+      // 调用TTS服务合成语音
+      const response = await window.electronAPI.synthesizeText(text);
+      const duration = Date.now() - startTime;
+
+      if (response.success) {
+        console.log(`[MessageManager] Segment synthesis successful in ${duration}ms:`, response.audioUrl);
+        return response.audioUrl;
+      } else {
+        const error = new Error(response.error || 'TTS synthesis failed');
+        error.errorType = response.errorType || 'unknown';
+        error.duration = duration;
+        throw error;
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error(`[MessageManager] Segment synthesis failed after ${duration}ms:`, error);
+
+      // 添加错误上下文信息
+      error.textLength = text.length;
+      error.duration = error.duration || duration;
+
+      throw error;
+    }
+  }
+
+  /**
+   * Show TTS error hint
+   * @param {Error} error - Error object
+   */
+  showTTSErrorHint(error) {
+    // Show different hints based on error type
+    let hintMessage = '';
+
+    if (error.message && error.message.includes('timeout')) {
+      hintMessage = 'TTS synthesis timeout, server may be under heavy load';
+    } else if (error.message && error.message.includes('service')) {
+      hintMessage = 'TTS service temporarily unavailable';
+    } else if (error.message && error.message.includes('connection')) {
+      hintMessage = 'Cannot connect to TTS service';
+    } else {
+      hintMessage = 'TTS synthesis temporarily unavailable';
+    }
+
+    console.warn('[MessageManager] TTS Error Hint:', hintMessage);
+
+    // Can optionally display hint in UI (currently only logged to console)
+    // Uncomment below if you want to show in UI
+    /*
+    if (this.currentAIMessage) {
+      const hintElement = document.createElement('div');
+      hintElement.style.cssText = `
+        color: #6c757d;
+        font-size: 11px;
+        margin-top: 5px;
+        opacity: 0.7;
+      `;
+      hintElement.textContent = hintMessage;
+      this.currentAIMessage.appendChild(hintElement);
+
+      // Remove hint after 3 seconds
+      setTimeout(() => {
+        if (hintElement.parentNode) {
+          hintElement.parentNode.removeChild(hintElement);
+        }
+      }, 3000);
+    }
+    */
+  }
+
+  /**
+   * 启动气泡显示计时器（30秒）
+   */
+  startBubbleDisplayTimer() {
+    // 清除之前的计时器
+    if (this.bubbleDisplayTimer) {
+      clearTimeout(this.bubbleDisplayTimer);
+    }
+
+    console.log('[MessageManager] Starting 30-second bubble display timer');
+    this.bubbleDisplayTimer = setTimeout(() => {
+      console.log('[MessageManager] 30-second timeout reached, clearing AI bubble');
+      this.clearCurrentAIMessage();
+    }, this.maxBubbleDisplayTime);
+  }
+
+  /**
+   * 如果没有超时则清除气泡
+   */
+  clearBubbleIfNotTimeout() {
+    // 只有在计时器还在运行时才清除（说明还没超时）
+    if (this.bubbleDisplayTimer) {
+      console.log('[MessageManager] All audio completed, clearing AI bubble');
+      this.clearCurrentAIMessage();
+    }
   }
 
   /**
@@ -228,10 +395,21 @@ export class MessageManager {
    * @private
    */
   clearCurrentAIMessage() {
-    // 清除定时器
+    // 清除传统定时器
     if (this.aiMessageTimeout) {
       clearTimeout(this.aiMessageTimeout);
       this.aiMessageTimeout = null;
+    }
+
+    // 清除气泡显示计时器
+    if (this.bubbleDisplayTimer) {
+      clearTimeout(this.bubbleDisplayTimer);
+      this.bubbleDisplayTimer = null;
+    }
+
+    // 停止分段音频队列
+    if (this.segmentedAudioQueue) {
+      this.segmentedAudioQueue.stop();
     }
 
     // 移除当前AI消息元素
@@ -420,7 +598,7 @@ export class MessageManager {
       this.stopCurrentAudio();
 
       // 构建完整的音频URL
-      const fullAudioUrl = audioUrl.startsWith('http')
+      let fullAudioUrl = audioUrl.startsWith('http')
         ? audioUrl
         : `http://localhost:3002${audioUrl}`;
 

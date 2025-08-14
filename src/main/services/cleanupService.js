@@ -234,18 +234,18 @@ export class CleanupService {
   }
 
   /**
-   * 检查进程是否与我们的应用相关
+   * Check if process is related to our application
    * @private
-   * @param {string} pid - 进程ID
+   * @param {string} pid - Process ID
    * @returns {Promise<boolean>}
    */
   async isRelatedProcess(pid) {
     try {
-      // 获取进程的命令行参数
+      // Get process command line arguments
       const { stdout } = await execAsync(`wmic process where processid=${pid} get commandline /value`);
       const commandLine = stdout.toLowerCase();
 
-      // 检查是否包含我们应用的关键词
+      // Check if it contains our application keywords
       const keywords = [
         'fish-speech',
         'fish_speech',
@@ -261,7 +261,7 @@ export class CleanupService {
 
       return keywords.some(keyword => commandLine.includes(keyword));
     } catch (error) {
-      // 如果无法获取命令行信息，为安全起见不杀死进程
+      // If unable to get command line info, don't kill process for safety
       return false;
     }
   }

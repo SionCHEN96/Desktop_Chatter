@@ -75,25 +75,25 @@ export class IPCService {
       this.windowService.minimizeMainWindow();
     });
 
-    // 处理窗口最大化/还原
+    // Handle window maximize/restore
     ipcMain.on('toggle-maximize-window', () => {
       console.log('[IPCService] Received toggle-maximize-window request');
       this.windowService.toggleMaximizeMainWindow();
     });
 
-    // 处理窗口置顶
+    // Handle window always on top
     ipcMain.on('set-always-on-top', (event, alwaysOnTop) => {
       console.log('[IPCService] Received set-always-on-top request:', alwaysOnTop);
       this.windowService.setAlwaysOnTop(alwaysOnTop);
     });
 
-    // 处理窗口可见性
+    // Handle window visibility
     ipcMain.on('set-window-visibility', (event, visible) => {
       console.log('[IPCService] Received set-window-visibility request:', visible);
       this.windowService.setWindowVisibility(visible);
     });
 
-    // 处理获取应用信息
+    // Handle get application info
     ipcMain.handle('get-app-info', () => {
       return {
         version: process.env.npm_package_version || '1.0.0',
@@ -104,7 +104,7 @@ export class IPCService {
 
 
 
-    // 处理获取窗口状态
+    // Handle get window state
     ipcMain.handle('get-window-state', () => {
       const mainWindow = this.windowService.getMainWindow();
       if (mainWindow) {
@@ -118,7 +118,7 @@ export class IPCService {
       return null;
     });
 
-    // 处理获取TTS服务状态
+    // Handle get TTS service status
     ipcMain.handle('get-tts-status', () => {
       if (this.ttsService) {
         return this.ttsService.getServiceStatus();
@@ -127,6 +127,64 @@ export class IPCService {
         isRunning: false,
         error: 'TTS service not available'
       };
+    });
+
+    // Handle text-to-speech synthesis
+    ipcMain.handle('synthesize-text', async (event, text) => {
+      const startTime = Date.now();
+
+      try {
+        console.log('[IPCService] Synthesizing text:', text.substring(0, 50) + '...');
+
+        if (!this.ttsService) {
+          throw new Error('TTS service not available');
+        }
+
+        // Check TTS service status
+        const serviceStatus = this.ttsService.getServiceStatus();
+        if (!serviceStatus.isRunning) {
+          throw new Error('TTS service is not running');
+        }
+
+        const audioUrl = await this.ttsService.synthesizeText(text);
+        const duration = Date.now() - startTime;
+
+        console.log(`[IPCService] Text synthesis completed in ${duration}ms:`, audioUrl);
+
+        return {
+          success: true,
+          audioUrl: audioUrl,
+          text: text,
+          duration: duration
+        };
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        console.error(`[IPCService] Text synthesis failed after ${duration}ms:`, error);
+
+        // Provide more detailed error information
+        let errorMessage = error.message;
+        let errorType = 'unknown';
+
+        if (error.name === 'AbortError' || error.message.includes('aborted')) {
+          errorType = 'timeout';
+          errorMessage = 'Request timeout - TTS service may be overloaded';
+        } else if (error.message.includes('ECONNREFUSED')) {
+          errorType = 'connection';
+          errorMessage = 'Cannot connect to TTS service';
+        } else if (error.message.includes('TTS service')) {
+          errorType = 'service';
+        } else if (error.message.includes('API error')) {
+          errorType = 'api';
+        }
+
+        return {
+          success: false,
+          error: errorMessage,
+          errorType: errorType,
+          text: text,
+          duration: duration
+        };
+      }
     });
 
     // 处理音频文件读取
@@ -182,7 +240,8 @@ export class IPCService {
     ipcMain.removeAllListeners('set-window-visibility');
     ipcMain.removeHandler('get-app-info');
     ipcMain.removeHandler('get-window-state');
-
-
+    ipcMain.removeHandler('get-tts-status');
+    ipcMain.removeHandler('get-audio-file');
+    ipcMain.removeHandler('synthesize-text');
   }
 }

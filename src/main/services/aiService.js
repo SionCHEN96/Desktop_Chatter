@@ -83,13 +83,13 @@ export class AIService {
     } catch (error) {
       logger.error('Failed to get AI response', error);
 
-      // 根据错误类型返回不同的用户友好消息
+      // Return different user-friendly messages based on error type
       if (error.type === ErrorType.NETWORK) {
-        return '网络连接出现问题，请检查网络设置后重试。';
+        return 'Network connection issue. Please check your network settings and try again.';
       } else if (error.type === ErrorType.VALIDATION) {
-        return '配置验证失败，请检查LM Studio配置。';
+        return 'Configuration validation failed. Please check your LM Studio configuration.';
       } else {
-        return '抱歉，我无法处理您的请求。请检查LM Studio是否正在运行并正确配置。';
+        return 'Sorry, I cannot process your request. Please check if LM Studio is running and properly configured.';
       }
     }
   }

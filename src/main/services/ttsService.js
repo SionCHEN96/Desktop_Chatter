@@ -85,18 +85,29 @@ export class TTSService {
       try {
         const projectRoot = path.resolve(__dirname, '../../../');
         const fishSpeechPath = path.join(projectRoot, 'fish-speech-test');
-        const startScript = path.join(fishSpeechPath, 'start_fish_speech.bat');
 
-        if (!fs.existsSync(startScript)) {
+        // Prefer clean mode startup script
+        const cleanScript = path.join(fishSpeechPath, 'start_fish_speech_clean.bat');
+        const fallbackScript = path.join(fishSpeechPath, 'start_fish_speech.bat');
+
+        let startScript;
+        if (fs.existsSync(cleanScript)) {
+          startScript = cleanScript;
+          console.log('[TTSService] Using optimized Fish Speech startup...');
+        } else if (fs.existsSync(fallbackScript)) {
+          startScript = fallbackScript;
+          console.log('[TTSService] Using standard Fish Speech startup...');
+        } else {
           throw new Error('Fish Speech start script not found');
         }
 
         console.log('[TTSService] Starting Fish Speech server...');
-        
+
         this.fishSpeechProcess = spawn('cmd', ['/c', startScript], {
           cwd: fishSpeechPath,
           stdio: ['ignore', 'pipe', 'pipe'],
-          detached: false
+          detached: false,
+          windowsHide: true  // 隐藏命令行窗口
         });
 
         let startupOutput = '';
@@ -104,16 +115,24 @@ export class TTSService {
         this.fishSpeechProcess.stdout.on('data', (data) => {
           const output = data.toString();
           startupOutput += output;
-          console.log('[Fish Speech]', output.trim());
-          
-          // 检查服务是否启动成功
+
+          // 过滤掉进度条和不重要的日志
+          if (this.shouldLogOutput(output.trim())) {
+            console.log('[Fish Speech]', output.trim());
+          }
+
+          // Check if service started successfully
           if (output.includes('Running on') || output.includes('Server started')) {
-            setTimeout(() => resolve(), 2000); // 等待2秒确保服务完全启动
+            setTimeout(() => resolve(), 2000); // Wait 2 seconds to ensure service is fully started
           }
         });
 
         this.fishSpeechProcess.stderr.on('data', (data) => {
-          console.error('[Fish Speech Error]', data.toString().trim());
+          const output = data.toString().trim();
+          // 过滤掉进度条和编码错误
+          if (this.shouldLogError(output)) {
+            console.error('[Fish Speech Error]', output);
+          }
         });
 
         this.fishSpeechProcess.on('error', (error) => {
@@ -128,7 +147,7 @@ export class TTSService {
           }
         });
 
-        // 设置启动超时
+        // Set startup timeout
         setTimeout(() => {
           if (this.fishSpeechProcess && !this.fishSpeechProcess.killed) {
             console.log('[TTSService] Fish Speech startup timeout, assuming success');
@@ -169,9 +188,9 @@ export class TTSService {
           const output = data.toString();
           console.log('[TTS Server]', output.trim());
           
-          // 检查服务是否启动成功
-          if (output.includes('Fish Speech 测试服务器启动成功')) {
-            setTimeout(() => resolve(), 1000); // 等待1秒确保服务完全启动
+          // Check if service started successfully
+          if (output.includes('Fish Speech test server started successfully') || output.includes('Fish Speech 测试服务器启动成功')) {
+            setTimeout(() => resolve(), 1000); // Wait 1 second to ensure service is fully started
           }
         });
 
@@ -191,13 +210,13 @@ export class TTSService {
           }
         });
 
-        // 设置启动超时
+        // Set startup timeout
         setTimeout(() => {
           if (this.ttsServerProcess && !this.ttsServerProcess.killed) {
             console.log('[TTSService] TTS server startup timeout, assuming success');
             resolve();
           }
-        }, 10000); // TTS服务器启动较快，10秒超时
+        }, 10000); // TTS server starts quickly, 10 second timeout
 
       } catch (error) {
         reject(error);
@@ -342,24 +361,84 @@ export class TTSService {
 
       // 清理文本（使用新的文本处理工具）
       const cleanedText = processTextForTTS(text);
-      
+
       if (cleanedText.length < TTS_CONFIG.TEXT_PROCESSING.MIN_TEXT_LENGTH) {
         throw new Error('Text is too short after cleaning');
       }
 
       console.log('[TTSService] Synthesizing text:', cleanedText);
 
-      // 构建请求数据
-      const requestData = {
-        text: cleanedText,
-        referenceAudio: this.referenceAudioBase64,
-        referenceText: TTS_CONFIG.VOICE_CLONING.REFERENCE_TEXT
-      };
+      // 使用重试机制进行合成
+      return await this.synthesizeWithRetry(cleanedText);
 
-      // 发送TTS请求
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), TTS_CONFIG.API.TIMEOUT);
+    } catch (error) {
+      console.error('[TTSService] Text synthesis failed:', error);
+      throw error;
+    }
+  }
 
+  /**
+   * 带重试机制的文本合成
+   * @private
+   * @param {string} cleanedText - 清理后的文本
+   * @returns {Promise<string>} 音频文件URL
+   */
+  async synthesizeWithRetry(cleanedText) {
+    const maxRetries = TTS_CONFIG.API.RETRY_ATTEMPTS || 3;
+    const retryDelay = TTS_CONFIG.API.RETRY_DELAY || 1000;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[TTSService] Synthesis attempt ${attempt}/${maxRetries}`);
+
+        const result = await this.performSynthesis(cleanedText);
+
+        console.log('[TTSService] Text synthesis completed:', result.audioUrl);
+        return result.audioUrl;
+
+      } catch (error) {
+        console.warn(`[TTSService] Attempt ${attempt} failed:`, error.message);
+
+        // 如果是最后一次尝试，抛出错误
+        if (attempt === maxRetries) {
+          throw error;
+        }
+
+        // 检查是否是可重试的错误
+        if (!this.isRetryableError(error)) {
+          throw error;
+        }
+
+        // 等待后重试
+        console.log(`[TTSService] Waiting ${retryDelay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+  }
+
+  /**
+   * 执行单次合成请求
+   * @private
+   * @param {string} cleanedText - 清理后的文本
+   * @returns {Promise<Object>} 合成结果
+   */
+  async performSynthesis(cleanedText) {
+    // 构建请求数据
+    const requestData = {
+      text: cleanedText,
+      referenceAudio: this.referenceAudioBase64,
+      referenceText: TTS_CONFIG.VOICE_CLONING.REFERENCE_TEXT
+    };
+
+    // 创建超时控制器
+    const controller = new AbortController();
+    const timeout = TTS_CONFIG.API.TIMEOUT || 60000;
+    const timeoutId = setTimeout(() => {
+      console.warn(`[TTSService] Request timeout after ${timeout}ms`);
+      controller.abort();
+    }, timeout);
+
+    try {
       const response = await fetch(`${TTS_CONFIG.API.BASE_URL}/api/tts`, {
         method: 'POST',
         headers: {
@@ -377,18 +456,86 @@ export class TTSService {
       }
 
       const result = await response.json();
-      
+
       if (!result.success || !result.audioUrl) {
         throw new Error('TTS synthesis failed: ' + (result.error || 'Unknown error'));
       }
 
-      console.log('[TTSService] Text synthesis completed:', result.audioUrl);
-      return result.audioUrl;
+      return result;
 
     } catch (error) {
-      console.error('[TTSService] Text synthesis failed:', error);
+      clearTimeout(timeoutId);
       throw error;
     }
+  }
+
+  /**
+   * 检查错误是否可重试
+   * @private
+   * @param {Error} error - 错误对象
+   * @returns {boolean} 是否可重试
+   */
+  isRetryableError(error) {
+    const retryableErrors = [
+      'AbortError',           // 请求被中止
+      'TimeoutError',         // 超时错误
+      'NetworkError',         // 网络错误
+      'ECONNRESET',          // 连接重置
+      'ECONNREFUSED',        // 连接被拒绝
+      'ETIMEDOUT',           // 连接超时
+      'fetch failed'         // fetch失败
+    ];
+
+    const errorMessage = error.message || '';
+    const errorName = error.name || '';
+
+    return retryableErrors.some(retryableError =>
+      errorMessage.includes(retryableError) ||
+      errorName.includes(retryableError)
+    );
+  }
+
+  /**
+   * 检查是否应该记录输出日志
+   * @private
+   * @param {string} output - 输出内容
+   * @returns {boolean} 是否应该记录
+   */
+  shouldLogOutput(output) {
+    // 过滤掉进度条和不重要的信息
+    const skipPatterns = [
+      /\d+%\|.*\|.*\[.*<.*,.*it\/s\]/,  // 进度条模式
+      /锟斤拷/,                          // 编码错误
+      /^\s*$/,                          // 空行
+      /Loading checkpoint/,             // 加载检查点
+      /Downloading/,                    // 下载信息
+      /\d+\/\d+.*\[.*\]/,              // 其他进度条格式
+      /.*it\/s.*ETA/,                  // ETA信息
+      /tqdm/i,                         // tqdm相关
+      /progress/i                      // 进度相关
+    ];
+
+    return !skipPatterns.some(pattern => pattern.test(output));
+  }
+
+  /**
+   * 检查是否应该记录错误日志
+   * @private
+   * @param {string} output - 错误输出内容
+   * @returns {boolean} 是否应该记录
+   */
+  shouldLogError(output) {
+    // 过滤掉进度条错误和编码问题
+    const skipPatterns = [
+      /\d+%\|.*\|.*\[.*<.*,.*it\/s\]/,  // 进度条模式
+      /锟斤拷/,                          // 编码错误
+      /^\s*$/,                          // 空行
+      /UserWarning.*progress/i,         // 进度相关警告
+      /tqdm.*warning/i,                 // tqdm警告
+      /FutureWarning.*progress/i        // 未来警告
+    ];
+
+    return !skipPatterns.some(pattern => pattern.test(output));
   }
 
   /**
