@@ -33,15 +33,16 @@ export class AudioQueue {
    */
   async startSegmentedSynthesis(textSegments, synthesizeFunction, callbacks = {}) {
     console.log('[AudioQueue] Starting segmented synthesis for', textSegments.length, 'segments');
-    
+
     this.onSegmentReady = callbacks.onSegmentReady;
     this.onAllComplete = callbacks.onAllComplete;
     this.onError = callbacks.onError;
+    this.synthesizeFunction = synthesizeFunction;
     this.startTime = Date.now();
-    
+
     // 清空之前的队列
     this.clear();
-    
+
     // 初始化队列
     this.queue = textSegments.map((text, index) => ({
       id: `segment_${index}`,
@@ -49,29 +50,37 @@ export class AudioQueue {
       audioUrl: null,
       isReady: false,
       isPlayed: false,
-      error: null
+      error: null,
+      isPlaying: false
     }));
 
-    // 开始合成所有段落
-    this.synthesisPromises = textSegments.map((text, index) => 
-      this.synthesizeSegment(text, index, synthesizeFunction)
-    );
+    // 开始逐个合成和播放
+    this.startSequentialSynthesisAndPlayback();
+  }
 
-    // 等待第一段合成完成
+  /**
+   * 开始顺序合成和播放
+   * @private
+   */
+  async startSequentialSynthesisAndPlayback() {
+    console.log('[AudioQueue] Starting sequential synthesis and playback');
+
     try {
-      await this.synthesisPromises[0];
-      
-      // 如果第一段成功，开始播放
-      if (this.queue[0] && this.queue[0].isReady) {
-        console.log('[AudioQueue] First segment ready, starting playback');
-        
-        // 通知第一段准备好
+      // 合成第一段
+      await this.synthesizeSegment(this.queue[0].text, 0, this.synthesizeFunction);
+
+      // 第一段准备好，通知显示气泡
+      if (this.queue[0].isReady) {
+        console.log('[AudioQueue] First segment ready, notifying UI');
         if (this.onSegmentReady) {
           this.onSegmentReady(this.queue[0]);
         }
-        
-        // 开始播放队列
-        this.startPlayback();
+
+        // 开始播放第一段
+        this.playSegment(this.queue[0], 0);
+
+        // 在后台继续合成剩余段落
+        this.continueBackgroundSynthesis();
       }
     } catch (error) {
       console.error('[AudioQueue] First segment synthesis failed:', error);
@@ -79,9 +88,30 @@ export class AudioQueue {
         this.onError(error);
       }
     }
+  }
 
-    // 在后台等待所有段落合成完成
-    this.waitForAllSegments();
+  /**
+   * 继续后台合成剩余段落
+   * @private
+   */
+  async continueBackgroundSynthesis() {
+    console.log('[AudioQueue] Starting background synthesis for remaining segments');
+
+    // 从第二段开始合成
+    for (let i = 1; i < this.queue.length; i++) {
+      try {
+        // 不等待，立即开始下一段的合成
+        this.synthesizeSegment(this.queue[i].text, i, this.synthesizeFunction)
+          .then(() => {
+            console.log(`[AudioQueue] Background segment ${i + 1} ready`);
+          })
+          .catch(error => {
+            console.error(`[AudioQueue] Background segment ${i + 1} failed:`, error);
+          });
+      } catch (error) {
+        console.error(`[AudioQueue] Failed to start synthesis for segment ${i + 1}:`, error);
+      }
+    }
   }
 
   /**
@@ -149,51 +179,7 @@ export class AudioQueue {
     }
   }
 
-  /**
-   * 开始播放队列
-   * @private
-   */
-  async startPlayback() {
-    if (this.isPlaying) {
-      return;
-    }
 
-    this.isPlaying = true;
-    console.log('[AudioQueue] Starting audio playback');
-
-    try {
-      for (let i = 0; i < this.queue.length; i++) {
-        const segment = this.queue[i];
-        
-        // 等待当前段落准备好
-        await this.waitForSegment(i);
-        
-        // 检查是否超时
-        if (this.isTimeout()) {
-          console.log('[AudioQueue] Display timeout reached, stopping playback');
-          break;
-        }
-        
-        // 播放当前段落
-        if (segment.isReady && segment.audioUrl && !segment.isPlayed) {
-          await this.playSegment(segment);
-        }
-      }
-    } catch (error) {
-      console.error('[AudioQueue] Playback error:', error);
-      if (this.onError) {
-        this.onError(error);
-      }
-    } finally {
-      this.isPlaying = false;
-      console.log('[AudioQueue] Playback completed');
-      
-      // 通知播放完成
-      if (this.onAllComplete) {
-        this.onAllComplete();
-      }
-    }
-  }
 
   /**
    * 等待指定段落准备好
@@ -201,99 +187,169 @@ export class AudioQueue {
    * @param {number} index - 段落索引
    */
   async waitForSegment(index) {
-    const maxWait = 10000; // 最多等待10秒
+    const maxWait = 15000; // 最多等待15秒
     const startWait = Date.now();
-    
+
+    console.log(`[AudioQueue] Waiting for segment ${index + 1} to be ready...`);
+
     while (!this.queue[index]?.isReady && !this.queue[index]?.error) {
       if (Date.now() - startWait > maxWait) {
-        throw new Error(`Segment ${index + 1} synthesis timeout`);
+        console.warn(`[AudioQueue] Segment ${index + 1} synthesis timeout, skipping`);
+        return false; // 返回false表示等待失败
       }
-      
+
       if (this.isTimeout()) {
-        throw new Error('Display timeout reached');
+        console.warn('[AudioQueue] Display timeout reached during wait');
+        return false; // 返回false表示等待失败
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
+
+      await new Promise(resolve => setTimeout(resolve, 200)); // 增加等待间隔
     }
-    
+
     if (this.queue[index]?.error) {
-      throw this.queue[index].error;
+      console.warn(`[AudioQueue] Segment ${index + 1} has error, skipping:`, this.queue[index].error);
+      return false; // 返回false表示有错误
     }
+
+    console.log(`[AudioQueue] Segment ${index + 1} is ready`);
+    return true; // 返回true表示准备好了
   }
 
   /**
    * 播放单个段落
    * @private
    * @param {Object} segment - 段落对象
+   * @param {number} index - 段落索引
    */
-  async playSegment(segment) {
+  async playSegment(segment, index) {
     return new Promise((resolve, reject) => {
       try {
-        console.log(`[AudioQueue] Playing segment:`, segment.text.substring(0, 30) + '...');
-        
-        // 如果用户还没有交互，跳过播放
+        console.log(`[AudioQueue] Playing segment ${index + 1}:`, segment.text.substring(0, 30) + '...');
+
+        // 标记为正在播放
+        segment.isPlaying = true;
+
+        // 如果用户还没有交互，跳过播放但继续下一段
         if (!this.hasUserInteracted) {
           console.log('[AudioQueue] Skipping audio playback - no user interaction');
           segment.isPlayed = true;
+          segment.isPlaying = false;
           resolve();
+          this.playNextSegment(index);
           return;
         }
-        
+
         // 构建完整的音频URL
-        const fullAudioUrl = segment.audioUrl.startsWith('http') 
-          ? segment.audioUrl 
+        const fullAudioUrl = segment.audioUrl.startsWith('http')
+          ? segment.audioUrl
           : `http://localhost:3002${segment.audioUrl}`;
 
         // 创建音频对象
         const audio = new Audio(fullAudioUrl);
         this.currentAudio = audio;
-        
+
         audio.addEventListener('loadeddata', () => {
-          console.log(`[AudioQueue] Audio loaded for segment`);
+          console.log(`[AudioQueue] Audio loaded for segment ${index + 1}`);
         });
-        
+
         audio.addEventListener('ended', () => {
-          console.log(`[AudioQueue] Segment playback completed`);
+          console.log(`[AudioQueue] Segment ${index + 1} playback completed`);
           segment.isPlayed = true;
+          segment.isPlaying = false;
           this.currentAudio = null;
           resolve();
+
+          // 播放下一段
+          this.playNextSegment(index);
         });
-        
+
         audio.addEventListener('error', (error) => {
-          console.error(`[AudioQueue] Audio playback error:`, error);
+          console.error(`[AudioQueue] Audio playback error for segment ${index + 1}:`, error);
           segment.isPlayed = true;
+          segment.isPlaying = false;
           this.currentAudio = null;
-          reject(error);
+
+          // 即使出错也继续播放下一段
+          this.playNextSegment(index);
+          resolve(); // 不reject，继续播放
         });
-        
+
         // 开始播放
         audio.play().catch(playError => {
-          console.error(`[AudioQueue] Audio play failed:`, playError);
+          console.error(`[AudioQueue] Audio play failed for segment ${index + 1}:`, playError);
           segment.isPlayed = true;
+          segment.isPlaying = false;
           this.currentAudio = null;
-          reject(playError);
+
+          // 即使出错也继续播放下一段
+          this.playNextSegment(index);
+          resolve(); // 不reject，继续播放
         });
-        
+
       } catch (error) {
-        console.error(`[AudioQueue] Error setting up audio playback:`, error);
+        console.error(`[AudioQueue] Error setting up audio playback for segment ${index + 1}:`, error);
         segment.isPlayed = true;
-        reject(error);
+        segment.isPlaying = false;
+
+        // 即使出错也继续播放下一段
+        this.playNextSegment(index);
+        resolve(); // 不reject，继续播放
       }
     });
   }
 
   /**
-   * 等待所有段落合成完成
+   * 播放下一段
    * @private
+   * @param {number} currentIndex - 当前段落索引
    */
-  async waitForAllSegments() {
-    try {
-      await Promise.allSettled(this.synthesisPromises);
-      console.log('[AudioQueue] All segments synthesis completed');
-    } catch (error) {
-      console.error('[AudioQueue] Error waiting for all segments:', error);
+  async playNextSegment(currentIndex) {
+    const nextIndex = currentIndex + 1;
+
+    // 检查是否还有下一段
+    if (nextIndex >= this.queue.length) {
+      console.log('[AudioQueue] All segments played, completing');
+      this.completePlayback();
+      return;
+    }
+
+    const nextSegment = this.queue[nextIndex];
+
+    // 等待下一段准备好
+    const isReady = await this.waitForSegment(nextIndex);
+
+    // 检查是否超时
+    if (this.isTimeout()) {
+      console.log('[AudioQueue] Display timeout reached, stopping playback');
+      this.completePlayback();
+      return;
+    }
+
+    // 如果段落准备好了，播放它
+    if (isReady && nextSegment.isReady && nextSegment.audioUrl && !nextSegment.isPlayed) {
+      await this.playSegment(nextSegment, nextIndex);
+    } else {
+      // 如果下一段不可用，继续检查后面的段落
+      console.log(`[AudioQueue] Segment ${nextIndex + 1} not ready, trying next segment`);
+      this.playNextSegment(nextIndex);
     }
   }
+
+  /**
+   * 完成播放
+   * @private
+   */
+  completePlayback() {
+    console.log('[AudioQueue] Playback completed');
+    this.isPlaying = false;
+
+    // 通知播放完成
+    if (this.onAllComplete) {
+      this.onAllComplete();
+    }
+  }
+
+
 
   /**
    * 检查是否超时
@@ -302,7 +358,14 @@ export class AudioQueue {
    */
   isTimeout() {
     if (!this.startTime) return false;
-    return Date.now() - this.startTime > this.maxDisplayTime;
+    const elapsed = Date.now() - this.startTime;
+    const isTimeout = elapsed > this.maxDisplayTime;
+
+    if (isTimeout) {
+      console.log(`[AudioQueue] Display timeout reached: ${elapsed}ms > ${this.maxDisplayTime}ms`);
+    }
+
+    return isTimeout;
   }
 
   /**

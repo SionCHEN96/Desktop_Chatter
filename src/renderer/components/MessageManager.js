@@ -149,11 +149,11 @@ export class MessageManager {
   async addAIMessageWithSegmentedTTS(message) {
     console.log('[MessageManager] Starting segmented TTS for message:', message.text.substring(0, 50) + '...');
 
-    // 对文本进行分段
+    // 对文本进行分段 - 使用更短的段落以减少单次合成时间
     const textSegments = segmentText(message.text, {
-      maxSegmentLength: 80,
-      minSegmentLength: 8,
-      preferredLength: 40
+      maxSegmentLength: 50,  // 减少最大长度
+      minSegmentLength: 6,   // 减少最小长度
+      preferredLength: 25    // 减少首选长度
     });
 
     console.log('[MessageManager] Text segmented into', textSegments.length, 'parts:', textSegments);
@@ -292,6 +292,8 @@ export class MessageManager {
     if (this.bubbleDisplayTimer) {
       console.log('[MessageManager] All audio completed, clearing AI bubble');
       this.clearCurrentAIMessage();
+    } else {
+      console.log('[MessageManager] Bubble timer already expired, not clearing');
     }
   }
 

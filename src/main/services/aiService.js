@@ -199,13 +199,58 @@ export class AIService {
       }
 
       // 检查和修复编码问题
-      if (content.includes('锛') || content.includes('鍚') || content.includes('浣')) {
+      const encodingIssuePatterns = ['锛', '鍚', '浣', '鎴', '鍙', '甯', '瑙', '鐞', '闂', '鍚', '鍛€', '鏄', '鐨', '鏅', '鸿兘', '鍔╂墜'];
+      const hasEncodingIssue = encodingIssuePatterns.some(pattern => content.includes(pattern));
+
+      if (hasEncodingIssue) {
         console.log('[AIService] Detected encoding issue in AI response, attempting to fix...');
+        console.log('[AIService] Original content sample:', content.substring(0, 100) + '...');
+
         try {
-          // 尝试重新编码
-          const buffer = Buffer.from(content, 'latin1');
-          content = buffer.toString('utf8');
+          // 尝试多种编码修复方法
+          let fixedContent = content;
+
+          // 方法1: latin1 -> utf8
+          try {
+            const buffer = Buffer.from(content, 'latin1');
+            const utf8Content = buffer.toString('utf8');
+
+            // 检查修复效果：如果包含更多常见中文字符，则使用修复后的内容
+            const commonChars = ['你', '好', '是', '的', '我', '在', '有', '了', '不', '和', '人', '这', '中', '大', '为'];
+            const utf8Score = commonChars.reduce((score, char) => score + (utf8Content.includes(char) ? 1 : 0), 0);
+            const originalScore = commonChars.reduce((score, char) => score + (content.includes(char) ? 1 : 0), 0);
+
+            if (utf8Score > originalScore) {
+              fixedContent = utf8Content;
+              console.log('[AIService] Encoding fix successful using latin1->utf8');
+            }
+          } catch (e) {
+            console.warn('[AIService] latin1->utf8 fix failed:', e.message);
+          }
+
+          // 方法2: 如果还有问题，尝试其他编码
+          if (encodingIssuePatterns.some(pattern => fixedContent.includes(pattern))) {
+            try {
+              // 尝试 gbk 解码
+              const iconv = require('iconv-lite');
+              if (iconv.encodingExists('gbk')) {
+                const gbkFixed = iconv.decode(Buffer.from(content, 'binary'), 'gbk');
+                const gbkScore = commonChars.reduce((score, char) => score + (gbkFixed.includes(char) ? 1 : 0), 0);
+                const currentScore = commonChars.reduce((score, char) => score + (fixedContent.includes(char) ? 1 : 0), 0);
+
+                if (gbkScore > currentScore) {
+                  fixedContent = gbkFixed;
+                  console.log('[AIService] Encoding fix successful using gbk');
+                }
+              }
+            } catch (e) {
+              console.warn('[AIService] GBK fix failed:', e.message);
+            }
+          }
+
+          content = fixedContent;
           console.log('[AIService] AI response after encoding fix:', content.substring(0, 100) + '...');
+
         } catch (encodingError) {
           console.warn('[AIService] Failed to fix AI response encoding:', encodingError);
         }

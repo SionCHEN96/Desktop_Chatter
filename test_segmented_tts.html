@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分段TTS测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            resize: vertical;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #e9ecef;
+        }
+        .segment {
+            background: #f8f9fa;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .segment.ready {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .segment.playing {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .segment.played {
+            border-left-color: #6c757d;
+            background: #e9ecef;
+        }
+        .segment.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 分段TTS功能测试</h1>
+        <p>测试语音分段合成和播放功能</p>
+        
+        <div>
+            <label for="inputText"><strong>测试文本：</strong></label>
+            <textarea id="inputText" placeholder="请输入要测试的长文本...">
+你好！我是你的AI助手。今天天气真不错，阳光明媚，微风徐徐。我可以帮你解答各种问题，比如学习、工作、生活等方面的疑问。如果你有什么需要帮助的地方，请随时告诉我。我会尽我所能为你提供准确、有用的信息和建议。让我们一起度过愉快的时光吧！希望我们能成为很好的朋友。
+            </textarea>
+        </div>
+        
+        <div>
+            <button id="testBtn" onclick="testSegmentedTTS()">🎵 测试分段TTS</button>
+            <button onclick="stopTest()">⏹️ 停止测试</button>
+            <button onclick="clearLog()">🗑️ 清除日志</button>
+        </div>
+        
+        <div id="status" class="status">
+            <strong>状态：</strong><span id="statusText">准备就绪</span>
+        </div>
+        
+        <div id="segments"></div>
+        
+        <h3>📋 测试日志</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        // 模拟分段TTS功能
+        import { segmentText } from './src/utils/textSegmentation.js';
+        
+        let currentTest = null;
+        let logContent = '';
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logContent += `[${timestamp}] ${message}\n`;
+            document.getElementById('log').textContent = logContent;
+            document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').textContent = text;
+        }
+
+        function clearLog() {
+            logContent = '';
+            document.getElementById('log').textContent = '';
+        }
+
+        // 模拟AudioQueue类
+        class MockAudioQueue {
+            constructor() {
+                this.queue = [];
+                this.isPlaying = false;
+                this.currentAudio = null;
+                this.hasUserInteracted = true; // 假设用户已交互
+                this.maxDisplayTime = 30000;
+                this.startTime = null;
+            }
+
+            async startSegmentedSynthesis(textSegments, synthesizeFunction, callbacks = {}) {
+                log(`Starting segmented synthesis for ${textSegments.length} segments`);
+                
+                this.onSegmentReady = callbacks.onSegmentReady;
+                this.onAllComplete = callbacks.onAllComplete;
+                this.onError = callbacks.onError;
+                this.synthesizeFunction = synthesizeFunction;
+                this.startTime = Date.now();
+                
+                // 初始化队列
+                this.queue = textSegments.map((text, index) => ({
+                    id: `segment_${index}`,
+                    text,
+                    audioUrl: null,
+                    isReady: false,
+                    isPlayed: false,
+                    error: null,
+                    isPlaying: false
+                }));
+
+                this.updateSegmentDisplay();
+                
+                // 开始顺序合成和播放
+                this.startSequentialSynthesisAndPlayback();
+            }
+
+            async startSequentialSynthesisAndPlayback() {
+                try {
+                    // 合成第一段
+                    await this.synthesizeSegment(this.queue[0].text, 0);
+                    
+                    // 第一段准备好，通知显示气泡
+                    if (this.queue[0].isReady) {
+                        log('First segment ready, showing AI bubble');
+                        if (this.onSegmentReady) {
+                            this.onSegmentReady(this.queue[0]);
+                        }
+                        
+                        // 开始播放第一段
+                        this.playSegment(this.queue[0], 0);
+                        
+                        // 在后台继续合成剩余段落
+                        this.continueBackgroundSynthesis();
+                    }
+                } catch (error) {
+                    log(`First segment synthesis failed: ${error.message}`);
+                    if (this.onError) {
+                        this.onError(error);
+                    }
+                }
+            }
+
+            async continueBackgroundSynthesis() {
+                log('Starting background synthesis for remaining segments');
+                
+                // 从第二段开始合成
+                for (let i = 1; i < this.queue.length; i++) {
+                    setTimeout(async () => {
+                        try {
+                            await this.synthesizeSegment(this.queue[i].text, i);
+                            log(`Background segment ${i + 1} ready`);
+                        } catch (error) {
+                            log(`Background segment ${i + 1} failed: ${error.message}`);
+                        }
+                    }, i * 1000); // 模拟合成时间
+                }
+            }
+
+            async synthesizeSegment(text, index) {
+                log(`Synthesizing segment ${index + 1}: ${text.substring(0, 30)}...`);
+                
+                // 模拟合成时间
+                const synthesisTime = 1000 + Math.random() * 2000;
+                await new Promise(resolve => setTimeout(resolve, synthesisTime));
+                
+                if (this.queue[index]) {
+                    this.queue[index].audioUrl = `/mock/audio/segment_${index}.wav`;
+                    this.queue[index].isReady = true;
+                    this.updateSegmentDisplay();
+                    log(`Segment ${index + 1} synthesis completed in ${synthesisTime.toFixed(0)}ms`);
+                }
+                
+                return this.queue[index].audioUrl;
+            }
+
+            async playSegment(segment, index) {
+                log(`Playing segment ${index + 1}: ${segment.text.substring(0, 30)}...`);
+                
+                segment.isPlaying = true;
+                this.updateSegmentDisplay();
+                
+                // 模拟播放时间
+                const playTime = 2000 + Math.random() * 3000;
+                await new Promise(resolve => setTimeout(resolve, playTime));
+                
+                segment.isPlayed = true;
+                segment.isPlaying = false;
+                this.updateSegmentDisplay();
+                
+                log(`Segment ${index + 1} playback completed`);
+                
+                // 播放下一段
+                this.playNextSegment(index);
+            }
+
+            async playNextSegment(currentIndex) {
+                const nextIndex = currentIndex + 1;
+                
+                if (nextIndex >= this.queue.length) {
+                    log('All segments played, completing');
+                    this.completePlayback();
+                    return;
+                }
+                
+                const nextSegment = this.queue[nextIndex];
+                
+                // 等待下一段准备好
+                const isReady = await this.waitForSegment(nextIndex);
+                
+                if (isReady && nextSegment.isReady && !nextSegment.isPlayed) {
+                    await this.playSegment(nextSegment, nextIndex);
+                } else {
+                    log(`Segment ${nextIndex + 1} not ready, trying next segment`);
+                    this.playNextSegment(nextIndex);
+                }
+            }
+
+            async waitForSegment(index) {
+                const maxWait = 10000;
+                const startWait = Date.now();
+                
+                while (!this.queue[index]?.isReady && !this.queue[index]?.error) {
+                    if (Date.now() - startWait > maxWait) {
+                        log(`Segment ${index + 1} synthesis timeout, skipping`);
+                        return false;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+                
+                return this.queue[index]?.isReady;
+            }
+
+            completePlayback() {
+                log('Playback completed');
+                this.isPlaying = false;
+                updateStatus('测试完成');
+                
+                if (this.onAllComplete) {
+                    this.onAllComplete();
+                }
+            }
+
+            updateSegmentDisplay() {
+                const container = document.getElementById('segments');
+                container.innerHTML = '<h3>📝 分段状态</h3>';
+                
+                this.queue.forEach((segment, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'segment';
+                    
+                    if (segment.error) {
+                        div.classList.add('error');
+                    } else if (segment.isPlaying) {
+                        div.classList.add('playing');
+                    } else if (segment.isPlayed) {
+                        div.classList.add('played');
+                    } else if (segment.isReady) {
+                        div.classList.add('ready');
+                    }
+                    
+                    let status = '等待中';
+                    if (segment.error) status = '错误';
+                    else if (segment.isPlaying) status = '播放中';
+                    else if (segment.isPlayed) status = '已播放';
+                    else if (segment.isReady) status = '已准备';
+                    
+                    div.innerHTML = `
+                        <strong>段落 ${index + 1} (${status})</strong><br>
+                        ${segment.text}
+                    `;
+                    
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        window.testSegmentedTTS = async function() {
+            const inputText = document.getElementById('inputText').value;
+            const testBtn = document.getElementById('testBtn');
+            
+            if (!inputText.trim()) {
+                alert('请输入要测试的文本！');
+                return;
+            }
+
+            testBtn.disabled = true;
+            updateStatus('正在分段...');
+            clearLog();
+            
+            try {
+                // 分段文本
+                const segments = segmentText(inputText, {
+                    maxSegmentLength: 80,
+                    minSegmentLength: 8,
+                    preferredLength: 40
+                });
+                
+                log(`Text segmented into ${segments.length} parts`);
+                updateStatus('开始分段TTS测试...');
+                
+                // 创建模拟AudioQueue
+                currentTest = new MockAudioQueue();
+                
+                // 开始测试
+                await currentTest.startSegmentedSynthesis(
+                    segments,
+                    (text) => Promise.resolve(`/mock/audio/${Date.now()}.wav`),
+                    {
+                        onSegmentReady: (segment) => {
+                            log('✅ First segment ready - AI bubble should appear');
+                            updateStatus('AI气泡已显示，开始播放...');
+                        },
+                        onAllComplete: () => {
+                            log('✅ All segments completed - AI bubble should disappear');
+                            updateStatus('所有段落播放完成，AI气泡应消失');
+                        },
+                        onError: (error) => {
+                            log(`❌ Error: ${error.message}`);
+                            updateStatus('测试出错');
+                        }
+                    }
+                );
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`);
+                updateStatus('测试失败');
+            } finally {
+                testBtn.disabled = false;
+            }
+        };
+
+        window.stopTest = function() {
+            if (currentTest) {
+                currentTest = null;
+                log('Test stopped by user');
+                updateStatus('测试已停止');
+            }
+        };
+
+        window.clearLog = clearLog;
+    </script>
+</body>
+</html>

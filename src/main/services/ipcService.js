@@ -30,12 +30,40 @@ export class IPCService {
         console.log('[IPCService] Received message:', message);
         const response = await this.aiService.getAIResponse(message);
 
+        // 检查和修复响应文本的编码问题
+        let cleanResponse = response;
+        const encodingIssuePatterns = ['锛', '鍚', '浣', '鎴', '鍙', '甯', '瑙', '鐞', '闂', '鍚', '鍛€', '鏄', '鐨', '鏅', '鸿兘', '鍔╂墜'];
+        const hasEncodingIssue = encodingIssuePatterns.some(pattern => response.includes(pattern));
+
+        if (hasEncodingIssue) {
+          console.log('[IPCService] Detected encoding issue in response, attempting to fix...');
+          console.log('[IPCService] Original response sample:', response.substring(0, 100) + '...');
+
+          try {
+            const buffer = Buffer.from(response, 'latin1');
+            const fixedResponse = buffer.toString('utf8');
+
+            // 验证修复效果
+            const commonChars = ['你', '好', '是', '的', '我', '在', '有', '了', '不', '和', '人', '这', '中', '大', '为'];
+            const fixedScore = commonChars.reduce((score, char) => score + (fixedResponse.includes(char) ? 1 : 0), 0);
+            const originalScore = commonChars.reduce((score, char) => score + (response.includes(char) ? 1 : 0), 0);
+
+            if (fixedScore > originalScore) {
+              cleanResponse = fixedResponse;
+              console.log('[IPCService] Encoding fix successful');
+              console.log('[IPCService] Fixed response sample:', cleanResponse.substring(0, 100) + '...');
+            }
+          } catch (encodingError) {
+            console.warn('[IPCService] Failed to fix encoding:', encodingError);
+          }
+        }
+
         // 如果有TTS服务，尝试合成语音
         let audioUrl = null;
         if (this.ttsService) {
           try {
             console.log('[IPCService] Synthesizing speech for AI response...');
-            audioUrl = await this.ttsService.synthesizeText(response);
+            audioUrl = await this.ttsService.synthesizeText(cleanResponse);
             console.log('[IPCService] Speech synthesis completed:', audioUrl);
           } catch (ttsError) {
             console.warn('[IPCService] TTS synthesis failed:', ttsError.message);
@@ -45,7 +73,7 @@ export class IPCService {
 
         // 发送响应（包含文本和音频URL）
         event.reply('response', {
-          text: response,
+          text: cleanResponse,
           audioUrl: audioUrl
         });
       } catch (error) {

@@ -70,7 +70,8 @@ export class ChatContainer {
    */
   showAIMessage(text, audioUrl = null) {
     // Check text length to decide whether to use segmented TTS
-    const shouldUseSegmentedTTS = !audioUrl && text.length > 50;
+    // Use segmented TTS for texts longer than 30 characters to improve responsiveness
+    const shouldUseSegmentedTTS = !audioUrl && text.length > 30;
 
     if (shouldUseSegmentedTTS) {
       console.log('[ChatContainer] Using segmented TTS for long text:', text.length, 'characters');
@@ -79,6 +80,7 @@ export class ChatContainer {
         enableSegmentedTTS: true
       });
     } else {
+      console.log('[ChatContainer] Using traditional TTS for short text or existing audio');
       // Use traditional method (existing audio URL or short text)
       this.messageManager.addAIMessage(text, { audioUrl });
     }
