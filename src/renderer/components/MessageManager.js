@@ -24,9 +24,11 @@ export class MessageManager {
     this.segmentedAudioQueue = new AudioQueue(); // 分段音频队列
     this.bubbleDisplayTimer = null; // 气泡显示计时器
     this.maxBubbleDisplayTime = 30000; // 最大气泡显示时间（30秒）
+    this.voiceEnabled = true; // 语音功能开关
 
     this.initContainer();
     this.setupUserInteractionDetection();
+    this.setupVoiceSettingListener();
   }
 
   /**
@@ -40,6 +42,17 @@ export class MessageManager {
     }
 
     this.container.classList.add('message-container');
+  }
+
+  /**
+   * Setup voice setting listener
+   */
+  setupVoiceSettingListener() {
+    // Listen for voice setting changes from tray menu
+    window.electronAPI.onVoiceSettingChanged((data) => {
+      console.log('[MessageManager] Voice setting changed:', data.enabled);
+      this.voiceEnabled = data.enabled;
+    });
   }
 
   /**
@@ -128,14 +141,27 @@ export class MessageManager {
       }
     }
 
-    // 检查是否启用分段语音合成
-    if (options.enableSegmentedTTS && !message.audioUrl) {
-      // 使用分段语音合成
-      this.addAIMessageWithSegmentedTTS(message);
+    console.log(`[MessageManager] Voice enabled: ${this.voiceEnabled}`);
+
+    // 根据语音设置决定行为
+    if (this.voiceEnabled) {
+      // 语音开启：需要合成语音后再显示气泡
+      if (options.enableSegmentedTTS && !message.audioUrl) {
+        // 使用分段语音合成
+        this.addAIMessageWithSegmentedTTS(message);
+      } else if (message.audioUrl) {
+        // 有预合成的音频，使用传统方式
+        this.renderAIMessage(message);
+        this.startAIMessageTimeout();
+      } else {
+        // 没有音频但启用语音，先合成再显示
+        this.renderAIMessage(message);
+        this.startAIMessageTimeout();
+      }
     } else {
-      // 使用传统方式显示消息
+      // 语音关闭：直接显示AI回复气泡
+      console.log('[MessageManager] Voice disabled, showing bubble immediately');
       this.renderAIMessage(message);
-      // 设置10秒后自动消失
       this.startAIMessageTimeout();
     }
 

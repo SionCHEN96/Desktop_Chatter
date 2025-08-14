@@ -12,10 +12,11 @@ import fs from 'fs';
  * 封装IPC通信相关的所有操作
  */
 export class IPCService {
-  constructor(aiService, windowService, ttsService = null) {
+  constructor(aiService, windowService, ttsService = null, trayService = null) {
     this.aiService = aiService;
     this.windowService = windowService;
     this.ttsService = ttsService;
+    this.trayService = trayService;
     this.setupIPCHandlers();
   }
 
@@ -58,17 +59,21 @@ export class IPCService {
           }
         }
 
-        // 如果有TTS服务，尝试合成语音
+        // Check if voice is enabled and synthesize speech if needed
         let audioUrl = null;
-        if (this.ttsService) {
+        const isVoiceEnabled = this.trayService ? this.trayService.isVoiceEnabled() : true;
+
+        if (this.ttsService && isVoiceEnabled) {
           try {
-            console.log('[IPCService] Synthesizing speech for AI response...');
+            console.log('[IPCService] Voice enabled, synthesizing speech for AI response...');
             audioUrl = await this.ttsService.synthesizeText(cleanResponse);
             console.log('[IPCService] Speech synthesis completed:', audioUrl);
           } catch (ttsError) {
             console.warn('[IPCService] TTS synthesis failed:', ttsError.message);
-            // TTS失败不影响文本响应
+            // TTS failure doesn't affect text response
           }
+        } else if (!isVoiceEnabled) {
+          console.log('[IPCService] Voice disabled, skipping speech synthesis');
         }
 
         // 发送响应（包含文本和音频URL）
@@ -127,6 +132,13 @@ export class IPCService {
         version: process.env.npm_package_version || '1.0.0',
         platform: process.platform,
         arch: process.arch
+      };
+    });
+
+    // Handle get voice status
+    ipcMain.handle('get-voice-status', () => {
+      return {
+        enabled: this.trayService ? this.trayService.isVoiceEnabled() : true
       };
     });
 

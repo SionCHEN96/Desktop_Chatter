@@ -7,5 +7,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   moveWindow: (deltaX, deltaY) => ipcRenderer.send('move-window', { deltaX, deltaY }),
   getTTSStatus: () => ipcRenderer.invoke('get-tts-status'),
   getAudioFile: (audioUrl) => ipcRenderer.invoke('get-audio-file', audioUrl),
-  synthesizeText: (text) => ipcRenderer.invoke('synthesize-text', text)
+  synthesizeText: (text) => ipcRenderer.invoke('synthesize-text', text),
+
+  // Voice setting API
+  getVoiceStatus: () => ipcRenderer.invoke('get-voice-status'),
+  onVoiceSettingChanged: (callback) => ipcRenderer.on('voice-setting-changed', callback)
 });

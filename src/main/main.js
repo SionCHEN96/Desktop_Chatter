@@ -52,8 +52,8 @@ async function initializeServices() {
     // 初始化托盘服务（传入清理服务）
     trayService = new TrayService(windowService, cleanupService);
 
-    // 初始化IPC服务（传入TTS服务）
-    ipcService = new IPCService(aiService, windowService, ttsService);
+    // 初始化IPC服务（传入TTS服务和托盘服务）
+    ipcService = new IPCService(aiService, windowService, ttsService, trayService);
 
     console.log('[Main] All services initialized successfully');
   } catch (error) {

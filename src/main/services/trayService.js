@@ -20,6 +20,8 @@ export class TrayService {
     this.tray = null;
     this.windowService = windowService;
     this.cleanupService = cleanupService;
+    // 简单的语音功能开关，默认开启
+    this.voiceEnabled = true;
   }
 
   /**
@@ -209,15 +211,22 @@ export class TrayService {
   }
 
   /**
-   * 创建右键菜单
+   * Create context menu
    */
   createContextMenu() {
     const contextMenu = Menu.buildFromTemplate([
       {
         label: 'Settings',
-        click: () => {
-          this.handleSettingsClick();
-        }
+        submenu: [
+          {
+            label: 'Enable Voice',
+            type: 'checkbox',
+            checked: this.voiceEnabled,
+            click: (menuItem) => {
+              this.handleVoiceToggle(menuItem.checked);
+            }
+          }
+        ]
       },
       {
         type: 'separator'
@@ -260,11 +269,26 @@ export class TrayService {
   }
 
   /**
-   * Handle settings button click
+   * Handle voice toggle
+   * @param {boolean} enabled
    */
-  handleSettingsClick() {
-    console.log('[TrayService] Settings clicked - no action for now');
-    // No action for now, as per requirements
+  handleVoiceToggle(enabled) {
+    console.log(`[TrayService] Voice toggled: ${enabled}`);
+    this.voiceEnabled = enabled;
+
+    // Notify renderer process about the change
+    const mainWindow = this.windowService.getMainWindow();
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('voice-setting-changed', { enabled });
+    }
+  }
+
+  /**
+   * Get voice enabled status
+   * @returns {boolean}
+   */
+  isVoiceEnabled() {
+    return this.voiceEnabled;
   }
 
   /**
