@@ -14,7 +14,7 @@
   "keywords": [
     "ai",
     "electron",
-    "vrm",
+    "fbx",
     "three.js"
   ],
   "author": "dev",
@@ -27,7 +27,6 @@
     "@chroma-core/default-embed": "^0.1.8",
     "@electron/remote": "^2.0.11",
     "@mlc-ai/web-llm": "^0.2.31",
-    "@pixiv/three-vrm": "^3.4.2",
     "chromadb": "^3.0.10",
     "three": "^0.170.0"
   }
