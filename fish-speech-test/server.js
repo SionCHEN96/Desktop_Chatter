@@ -99,7 +99,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3002;
+const PORT = process.env.PORT || 3003; // 使用3003端口避免与主应用冲突
 
 // Fish Speech API configuration
 const FISH_SPEECH_CONFIG = {
@@ -283,7 +283,7 @@ app.get('/api/audio/latest', (req, res) => {
         return {
           filename: file,
           url: `/generated_audio/${file}`,
-          fullUrl: `http://localhost:3002/generated_audio/${file}`,
+          fullUrl: `http://localhost:${PORT}/generated_audio/${file}`,
           size: stats.size,
           modified: stats.mtime.toISOString()
         };

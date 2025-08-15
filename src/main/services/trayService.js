@@ -6,6 +6,8 @@
 import { Tray, Menu, app, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs';
+import path from 'path';
 
 // 获取当前模块的目录名
 const __filename = fileURLToPath(import.meta.url);
@@ -16,29 +18,59 @@ const __dirname = dirname(__filename);
  * 封装系统托盘相关的所有操作
  */
 export class TrayService {
-  constructor(windowService, cleanupService = null, settingsService = null) {
+  constructor(windowService, cleanupService = null) {
     this.tray = null;
     this.windowService = windowService;
     this.cleanupService = cleanupService;
-    this.settingsService = settingsService;
-    // 语音功能开关，从设置服务获取
-    this.voiceEnabled = false; // 默认关闭，将从设置服务加载
+
+    // 设置文件路径
+    this.settingsPath = path.join(app.getPath('userData'), 'settings.json');
+
+    // 加载设置，默认语音功能关闭
+    this.settings = this.loadSettings();
+    this.voiceEnabled = this.settings.voiceEnabled ?? false; // 默认为false
   }
 
   /**
-   * 初始化托盘服务
+   * 加载设置
+   * @returns {Object} 设置对象
    */
-  async initialize() {
+  loadSettings() {
     try {
-      // 从设置服务加载语音设置
-      if (this.settingsService && this.settingsService.isInitialized()) {
-        this.voiceEnabled = this.settingsService.isVoiceEnabled();
-        console.log(`[TrayService] Loaded voice setting from settings service: ${this.voiceEnabled}`);
-      } else {
-        console.log('[TrayService] Settings service not available, using default voice setting');
+      if (fs.existsSync(this.settingsPath)) {
+        const settingsData = fs.readFileSync(this.settingsPath, 'utf8');
+        const settings = JSON.parse(settingsData);
+        console.log('[TrayService] Settings loaded:', settings);
+        return settings;
       }
     } catch (error) {
-      console.error('[TrayService] Failed to initialize tray service:', error);
+      console.error('[TrayService] Failed to load settings:', error);
+    }
+
+    // 返回默认设置
+    const defaultSettings = { voiceEnabled: false };
+    console.log('[TrayService] Using default settings:', defaultSettings);
+    return defaultSettings;
+  }
+
+  /**
+   * 保存设置
+   * @param {Object} settings - 要保存的设置
+   */
+  saveSettings(settings = null) {
+    try {
+      const settingsToSave = settings || this.settings;
+
+      // 确保目录存在
+      const settingsDir = path.dirname(this.settingsPath);
+      if (!fs.existsSync(settingsDir)) {
+        fs.mkdirSync(settingsDir, { recursive: true });
+      }
+
+      fs.writeFileSync(this.settingsPath, JSON.stringify(settingsToSave, null, 2));
+      console.log('[TrayService] Settings saved:', settingsToSave);
+    } catch (error) {
+      console.error('[TrayService] Failed to save settings:', error);
     }
   }
 
@@ -290,19 +322,13 @@ export class TrayService {
    * Handle voice toggle
    * @param {boolean} enabled
    */
-  async handleVoiceToggle(enabled) {
+  handleVoiceToggle(enabled) {
     console.log(`[TrayService] Voice toggled: ${enabled}`);
     this.voiceEnabled = enabled;
 
-    // 保存设置到设置服务
-    if (this.settingsService && this.settingsService.isInitialized()) {
-      try {
-        await this.settingsService.setVoiceEnabled(enabled);
-        console.log(`[TrayService] Voice setting saved: ${enabled}`);
-      } catch (error) {
-        console.error('[TrayService] Failed to save voice setting:', error);
-      }
-    }
+    // 更新设置并保存
+    this.settings.voiceEnabled = enabled;
+    this.saveSettings();
 
     // Notify renderer process about the change
     const mainWindow = this.windowService.getMainWindow();

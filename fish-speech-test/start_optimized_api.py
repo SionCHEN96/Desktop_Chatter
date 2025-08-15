@@ -24,12 +24,25 @@ try:
 except ImportError:
     print("Warning: Could not import optimization modules")
 
+def detect_device():
+    """检测可用的设备类型"""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+        else:
+            return "cpu"
+    except ImportError:
+        return "cpu"
+
 def start_api_server():
     """启动优化的API服务器"""
-    
+
+    device = detect_device()
+
     print(f"[{time.strftime('%H:%M:%S')}] Starting optimized Fish Speech API server...")
     print(f"[{time.strftime('%H:%M:%S')}] Working directory: {fish_speech_dir}")
-    print(f"[{time.strftime('%H:%M:%S')}] Device: CUDA")
+    print(f"[{time.strftime('%H:%M:%S')}] Device: {device.upper()}")
     print(f"[{time.strftime('%H:%M:%S')}] Port: 8081")
     print()
     
@@ -55,7 +68,7 @@ def start_api_server():
         python_exe,
         str(api_script),
         "--listen", "0.0.0.0:8081",
-        "--device", "cuda"
+        "--device", device
     ]
     
     print(f"[{time.strftime('%H:%M:%S')}] Command: {' '.join(cmd)}")

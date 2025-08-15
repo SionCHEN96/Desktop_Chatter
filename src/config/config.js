@@ -217,7 +217,7 @@ export const SETTINGS_CONFIG = {
 export const TTS_CONFIG = {
   // Fish Speech API配置
   API: {
-    BASE_URL: 'http://localhost:3002',
+    BASE_URL: 'http://localhost:3003',
     FISH_SPEECH_URL: 'http://localhost:8081', // 改为8081避免端口冲突
     TIMEOUT: 60000,
     RETRY_ATTEMPTS: 3,

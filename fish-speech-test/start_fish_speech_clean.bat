@@ -8,12 +8,12 @@ echo ========================================
 echo.
 
 echo [%time%] Initializing clean environment...
-echo [%time%] Device: CUDA
+echo [%time%] Device: Auto-detect (CUDA/CPU)
 echo [%time%] Port: 8081
 echo [%time%] Mode: Optimized (Reduced Logging)
 echo.
 
-cd /d "E:\Personal\Desktop_Chatter\fish-speech-test"
+cd /d "%~dp0"
 
 REM Check if virtual environment exists
 if not exist "fish_speech_env\Scripts\activate.bat" (
