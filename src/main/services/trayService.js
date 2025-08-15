@@ -6,6 +6,8 @@
 import { Tray, Menu, app, nativeImage } from 'electron';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs';
+import path from 'path';
 
 // 获取当前模块的目录名
 const __filename = fileURLToPath(import.meta.url);
@@ -20,8 +22,56 @@ export class TrayService {
     this.tray = null;
     this.windowService = windowService;
     this.cleanupService = cleanupService;
-    // 简单的语音功能开关，默认开启
-    this.voiceEnabled = true;
+
+    // 设置文件路径
+    this.settingsPath = path.join(app.getPath('userData'), 'settings.json');
+
+    // 加载设置，默认语音功能关闭
+    this.settings = this.loadSettings();
+    this.voiceEnabled = this.settings.voiceEnabled ?? false; // 默认为false
+  }
+
+  /**
+   * 加载设置
+   * @returns {Object} 设置对象
+   */
+  loadSettings() {
+    try {
+      if (fs.existsSync(this.settingsPath)) {
+        const settingsData = fs.readFileSync(this.settingsPath, 'utf8');
+        const settings = JSON.parse(settingsData);
+        console.log('[TrayService] Settings loaded:', settings);
+        return settings;
+      }
+    } catch (error) {
+      console.error('[TrayService] Failed to load settings:', error);
+    }
+
+    // 返回默认设置
+    const defaultSettings = { voiceEnabled: false };
+    console.log('[TrayService] Using default settings:', defaultSettings);
+    return defaultSettings;
+  }
+
+  /**
+   * 保存设置
+   * @param {Object} settings - 要保存的设置
+   */
+  saveSettings(settings = null) {
+    try {
+      const settingsToSave = settings || this.settings;
+
+      // 确保目录存在
+      const settingsDir = path.dirname(this.settingsPath);
+      if (!fs.existsSync(settingsDir)) {
+        fs.mkdirSync(settingsDir, { recursive: true });
+      }
+
+      fs.writeFileSync(this.settingsPath, JSON.stringify(settingsToSave, null, 2));
+      console.log('[TrayService] Settings saved:', settingsToSave);
+    } catch (error) {
+      console.error('[TrayService] Failed to save settings:', error);
+    }
   }
 
   /**
@@ -275,6 +325,10 @@ export class TrayService {
   handleVoiceToggle(enabled) {
     console.log(`[TrayService] Voice toggled: ${enabled}`);
     this.voiceEnabled = enabled;
+
+    // 更新设置并保存
+    this.settings.voiceEnabled = enabled;
+    this.saveSettings();
 
     // Notify renderer process about the change
     const mainWindow = this.windowService.getMainWindow();

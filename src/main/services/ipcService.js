@@ -176,6 +176,19 @@ export class IPCService {
       try {
         console.log('[IPCService] Synthesizing text:', text.substring(0, 50) + '...');
 
+        // Check if voice is enabled
+        const isVoiceEnabled = this.trayService ? this.trayService.isVoiceEnabled() : true;
+        if (!isVoiceEnabled) {
+          console.log('[IPCService] Voice disabled, skipping manual speech synthesis');
+          return {
+            success: false,
+            error: 'Voice synthesis is disabled',
+            errorType: 'disabled',
+            text: text,
+            duration: Date.now() - startTime
+          };
+        }
+
         if (!this.ttsService) {
           throw new Error('TTS service not available');
         }
