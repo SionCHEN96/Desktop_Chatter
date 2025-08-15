@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Speech TTS 测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: white;
+            color: #007bff;
+            border-bottom: 3px solid #007bff;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 40px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .audio-player {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .file-upload {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            background: rgba(0, 123, 255, 0.05);
+        }
+
+        .file-upload.dragover {
+            background: rgba(0, 123, 255, 0.1);
+            border-color: #0056b3;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .examples {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .examples h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .example-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .example-item:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .example-item strong {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐟 Fish Speech TTS 测试</h1>
+            <p>高质量文本转语音 & 声音克隆测试平台</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('basic')">基础 TTS</button>
+            <button class="tab" onclick="switchTab('clone')">声音克隆</button>
+            <button class="tab" onclick="switchTab('history')">历史记录</button>
+        </div>
+
+        <!-- 基础TTS标签页 -->
+        <div id="basic" class="tab-content active">
+            <h2>基础文本转语音</h2>
+            
+            <div class="examples">
+                <h3>示例文本</h3>
+                <div class="example-item" onclick="setExampleText('你好，我是Fish Speech语音合成系统。我可以将文本转换为自然流畅的语音。')">
+                    <strong>中文示例：</strong>你好，我是Fish Speech语音合成系统。我可以将文本转换为自然流畅的语音。
+                </div>
+                <div class="example-item" onclick="setExampleText('Hello, I am Fish Speech text-to-speech system. I can convert text into natural and fluent speech.')">
+                    <strong>英文示例：</strong>Hello, I am Fish Speech text-to-speech system. I can convert text into natural and fluent speech.
+                </div>
+                <div class="example-item" onclick="setExampleText('こんにちは、私はFish Speech音声合成システムです。テキストを自然で流暢な音声に変換できます。')">
+                    <strong>日文示例：</strong>こんにちは、私はFish Speech音声合成システムです。テキストを自然で流暢な音声に変換できます。
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="basicText">输入要合成的文本：</label>
+                <textarea id="basicText" placeholder="请输入要转换为语音的文本..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="language">语言选择：</label>
+                <select id="language">
+                    <option value="auto">自动检测</option>
+                    <option value="zh">中文</option>
+                    <option value="en">英文</option>
+                    <option value="ja">日文</option>
+                    <option value="ko">韩文</option>
+                    <option value="fr">法文</option>
+                    <option value="de">德文</option>
+                    <option value="es">西班牙文</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="synthesizeBasic()">🎵 生成语音</button>
+            <button class="btn btn-secondary" onclick="clearBasic()">🗑️ 清空</button>
+
+            <div id="basicStatus"></div>
+            <div id="basicLoading" class="loading">
+                <div class="spinner"></div>
+                <p>正在生成语音，请稍候...</p>
+            </div>
+            <div id="basicResult"></div>
+        </div>
+
+        <!-- 声音克隆标签页 -->
+        <div id="clone" class="tab-content">
+            <h2>声音克隆</h2>
+            <p>上传参考音频文件，系统将学习其声音特征并用于合成新的语音。</p>
+
+            <div class="form-group">
+                <label for="cloneText">要合成的文本：</label>
+                <textarea id="cloneText" placeholder="请输入要用克隆声音合成的文本..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="referenceText">参考音频对应的文本：</label>
+                <textarea id="referenceText" placeholder="请输入参考音频中说的内容..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>上传参考音频文件：</label>
+                <div class="file-upload" id="fileUpload">
+                    <p>📁 点击选择文件或拖拽文件到此处</p>
+                    <p>支持格式：WAV, MP3, M4A (最大10MB)</p>
+                    <input type="file" id="referenceAudio" accept="audio/*" style="display: none;">
+                </div>
+                <div id="fileInfo"></div>
+            </div>
+
+            <button class="btn" onclick="synthesizeClone()">🎭 克隆语音</button>
+            <button class="btn btn-secondary" onclick="clearClone()">🗑️ 清空</button>
+
+            <div id="cloneStatus"></div>
+            <div id="cloneLoading" class="loading">
+                <div class="spinner"></div>
+                <p>正在进行声音克隆，请稍候...</p>
+            </div>
+            <div id="cloneResult"></div>
+        </div>
+
+        <!-- 历史记录标签页 -->
+        <div id="history" class="tab-content">
+            <h2>生成历史</h2>
+            <p>查看和管理之前生成的音频文件。</p>
+            
+            <button class="btn" onclick="loadHistory()">🔄 刷新列表</button>
+            
+            <div id="historyLoading" class="loading">
+                <div class="spinner"></div>
+                <p>正在加载历史记录...</p>
+            </div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentAudio = null;
+
+        // 标签页切换
+        function switchTab(tabName) {
+            // 隐藏所有标签页内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的active类
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的标签页内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 添加active类到选中的标签
+            event.target.classList.add('active');
+            
+            // 如果切换到历史记录标签页，自动加载历史
+            if (tabName === 'history') {
+                loadHistory();
+            }
+        }
+
+        // 设置示例文本
+        function setExampleText(text) {
+            document.getElementById('basicText').value = text;
+        }
+
+        // 显示状态消息
+        function showStatus(elementId, message, type = 'info') {
+            const statusElement = document.getElementById(elementId);
+            statusElement.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            // 3秒后自动清除成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusElement.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // 显示/隐藏加载动画
+        function showLoading(elementId, show = true) {
+            const loadingElement = document.getElementById(elementId);
+            if (show) {
+                loadingElement.classList.add('show');
+            } else {
+                loadingElement.classList.remove('show');
+            }
+        }
+
+        // 基础TTS合成
+        async function synthesizeBasic() {
+            const text = document.getElementById('basicText').value.trim();
+            const language = document.getElementById('language').value;
+            
+            if (!text) {
+                showStatus('basicStatus', '请输入要合成的文本', 'error');
+                return;
+            }
+            
+            showLoading('basicLoading', true);
+            showStatus('basicStatus', '');
+            
+            try {
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        language: language
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('basicStatus', '语音合成成功！', 'success');
+                    displayAudioResult('basicResult', result.audioUrl, text);
+                } else {
+                    showStatus('basicStatus', `合成失败: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('TTS Error:', error);
+                showStatus('basicStatus', `网络错误: ${error.message}`, 'error');
+            } finally {
+                showLoading('basicLoading', false);
+            }
+        }
+
+        // 声音克隆合成
+        async function synthesizeClone() {
+            const text = document.getElementById('cloneText').value.trim();
+            const referenceText = document.getElementById('referenceText').value.trim();
+            const audioFile = document.getElementById('referenceAudio').files[0];
+            
+            if (!text) {
+                showStatus('cloneStatus', '请输入要合成的文本', 'error');
+                return;
+            }
+            
+            if (!referenceText) {
+                showStatus('cloneStatus', '请输入参考音频对应的文本', 'error');
+                return;
+            }
+            
+            if (!audioFile) {
+                showStatus('cloneStatus', '请上传参考音频文件', 'error');
+                return;
+            }
+            
+            showLoading('cloneLoading', true);
+            showStatus('cloneStatus', '');
+            
+            try {
+                const formData = new FormData();
+                formData.append('text', text);
+                formData.append('referenceText', referenceText);
+                formData.append('referenceAudio', audioFile);
+                
+                const response = await fetch('/api/voice-clone', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('cloneStatus', '声音克隆成功！', 'success');
+                    displayAudioResult('cloneResult', result.audioUrl, text, true);
+                } else {
+                    showStatus('cloneStatus', `克隆失败: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Voice Clone Error:', error);
+                showStatus('cloneStatus', `网络错误: ${error.message}`, 'error');
+            } finally {
+                showLoading('cloneLoading', false);
+            }
+        }
+
+        // 显示音频结果
+        function displayAudioResult(containerId, audioUrl, text, isCloned = false) {
+            const container = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleString();
+            const type = isCloned ? '声音克隆' : '基础TTS';
+            
+            container.innerHTML = `
+                <div class="audio-player">
+                    <h3>🎵 ${type}结果</h3>
+                    <p><strong>文本:</strong> ${text}</p>
+                    <p><strong>生成时间:</strong> ${timestamp}</p>
+                    <audio controls>
+                        <source src="${audioUrl}" type="audio/wav">
+                        您的浏览器不支持音频播放。
+                    </audio>
+                    <br><br>
+                    <a href="${audioUrl}" download class="btn">📥 下载音频</a>
+                </div>
+            `;
+        }
+
+        // 清空基础TTS表单
+        function clearBasic() {
+            document.getElementById('basicText').value = '';
+            document.getElementById('language').value = 'auto';
+            document.getElementById('basicStatus').innerHTML = '';
+            document.getElementById('basicResult').innerHTML = '';
+        }
+
+        // 清空声音克隆表单
+        function clearClone() {
+            document.getElementById('cloneText').value = '';
+            document.getElementById('referenceText').value = '';
+            document.getElementById('referenceAudio').value = '';
+            document.getElementById('cloneStatus').innerHTML = '';
+            document.getElementById('cloneResult').innerHTML = '';
+            document.getElementById('fileInfo').innerHTML = '';
+        }
+
+        // 加载历史记录
+        async function loadHistory() {
+            showLoading('historyLoading', true);
+            
+            try {
+                const response = await fetch('/api/audio/list');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayHistory(result.files);
+                } else {
+                    document.getElementById('historyList').innerHTML = 
+                        '<div class="status error">加载历史记录失败</div>';
+                }
+                
+            } catch (error) {
+                console.error('Load History Error:', error);
+                document.getElementById('historyList').innerHTML = 
+                    '<div class="status error">网络错误，无法加载历史记录</div>';
+            } finally {
+                showLoading('historyLoading', false);
+            }
+        }
+
+        // 显示历史记录
+        function displayHistory(files) {
+            const container = document.getElementById('historyList');
+            
+            if (files.length === 0) {
+                container.innerHTML = '<div class="status info">暂无历史记录</div>';
+                return;
+            }
+            
+            let html = '<div class="examples">';
+            files.forEach(file => {
+                const date = new Date(file.modified).toLocaleString();
+                const size = (file.size / 1024).toFixed(1);
+                
+                html += `
+                    <div class="example-item">
+                        <strong>${file.filename}</strong>
+                        <p>大小: ${size} KB | 时间: ${date}</p>
+                        <audio controls style="width: 100%; margin-top: 10px;">
+                            <source src="${file.url}" type="audio/wav">
+                        </audio>
+                        <br>
+                        <a href="${file.url}" download class="btn" style="margin-top: 10px;">📥 下载</a>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        // 文件上传处理
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileUpload = document.getElementById('fileUpload');
+            const fileInput = document.getElementById('referenceAudio');
+            const fileInfo = document.getElementById('fileInfo');
+            
+            // 点击上传区域
+            fileUpload.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            // 文件选择
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖拽上传
+            fileUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUpload.classList.add('dragover');
+            });
+            
+            fileUpload.addEventListener('dragleave', () => {
+                fileUpload.classList.remove('dragover');
+            });
+            
+            fileUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUpload.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect();
+                }
+            });
+            
+            function handleFileSelect() {
+                const file = fileInput.files[0];
+                if (file) {
+                    const size = (file.size / 1024 / 1024).toFixed(2);
+                    fileInfo.innerHTML = `
+                        <div class="status success">
+                            ✅ 已选择文件: ${file.name} (${size} MB)
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        // 页面加载完成后检查服务状态
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/api/fish-speech/status');
+                const status = await response.json();
+                
+                if (status.status === 'available') {
+                    console.log('Fish Speech服务可用:', status.type);
+                } else {
+                    console.warn('Fish Speech服务不可用');
+                }
+            } catch (error) {
+                console.error('无法检查服务状态:', error);
+            }
+        });
+    </script>
+</body>
+</html>
