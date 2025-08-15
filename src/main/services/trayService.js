@@ -16,12 +16,30 @@ const __dirname = dirname(__filename);
  * 封装系统托盘相关的所有操作
  */
 export class TrayService {
-  constructor(windowService, cleanupService = null) {
+  constructor(windowService, cleanupService = null, settingsService = null) {
     this.tray = null;
     this.windowService = windowService;
     this.cleanupService = cleanupService;
-    // 简单的语音功能开关，默认开启
-    this.voiceEnabled = true;
+    this.settingsService = settingsService;
+    // 语音功能开关，从设置服务获取
+    this.voiceEnabled = false; // 默认关闭，将从设置服务加载
+  }
+
+  /**
+   * 初始化托盘服务
+   */
+  async initialize() {
+    try {
+      // 从设置服务加载语音设置
+      if (this.settingsService && this.settingsService.isInitialized()) {
+        this.voiceEnabled = this.settingsService.isVoiceEnabled();
+        console.log(`[TrayService] Loaded voice setting from settings service: ${this.voiceEnabled}`);
+      } else {
+        console.log('[TrayService] Settings service not available, using default voice setting');
+      }
+    } catch (error) {
+      console.error('[TrayService] Failed to initialize tray service:', error);
+    }
   }
 
   /**
@@ -272,9 +290,19 @@ export class TrayService {
    * Handle voice toggle
    * @param {boolean} enabled
    */
-  handleVoiceToggle(enabled) {
+  async handleVoiceToggle(enabled) {
     console.log(`[TrayService] Voice toggled: ${enabled}`);
     this.voiceEnabled = enabled;
+
+    // 保存设置到设置服务
+    if (this.settingsService && this.settingsService.isInitialized()) {
+      try {
+        await this.settingsService.setVoiceEnabled(enabled);
+        console.log(`[TrayService] Voice setting saved: ${enabled}`);
+      } catch (error) {
+        console.error('[TrayService] Failed to save voice setting:', error);
+      }
+    }
 
     // Notify renderer process about the change
     const mainWindow = this.windowService.getMainWindow();

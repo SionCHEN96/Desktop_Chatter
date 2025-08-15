@@ -11,6 +11,8 @@ export {
     ANIMATION_CONFIG,
     MEMORY_CONFIG,
     RENDERING_CONFIG,
+    TTS_CONFIG,
+    SETTINGS_CONFIG,
     LOGGING_CONFIG,
     validateUrl,
     buildSystemPromptWithMemory

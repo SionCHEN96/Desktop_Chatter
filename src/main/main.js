@@ -4,7 +4,7 @@
  */
 
 import { app, BrowserWindow } from 'electron';
-import { AIService, WindowService, IPCService, MemoryService, TrayService, TTSService, CleanupService } from './services/index.js';
+import { AIService, WindowService, IPCService, MemoryService, TrayService, TTSService, CleanupService, SettingsService } from './services/index.js';
 
 // 解决WebGL问题的命令行参数
 app.commandLine.appendSwitch('ignore-gpu-blacklist');
@@ -19,6 +19,7 @@ let ipcService;
 let trayService;
 let ttsService;
 let cleanupService;
+let settingsService;
 
 /**
  * 初始化所有服务
@@ -28,6 +29,11 @@ async function initializeServices() {
   try {
     // 初始化清理服务
     cleanupService = new CleanupService();
+
+    // 初始化设置服务（优先初始化，其他服务可能需要用到）
+    settingsService = new SettingsService();
+    await settingsService.initialize();
+    console.log('[Main] Settings service initialized successfully');
 
     // 初始化TTS服务（优先启动，因为需要时间）
     ttsService = new TTSService();
@@ -49,8 +55,9 @@ async function initializeServices() {
     // 初始化窗口服务
     windowService = new WindowService();
 
-    // 初始化托盘服务（传入清理服务）
-    trayService = new TrayService(windowService, cleanupService);
+    // 初始化托盘服务（传入清理服务和设置服务）
+    trayService = new TrayService(windowService, cleanupService, settingsService);
+    await trayService.initialize();
 
     // 初始化IPC服务（传入TTS服务和托盘服务）
     ipcService = new IPCService(aiService, windowService, ttsService, trayService);

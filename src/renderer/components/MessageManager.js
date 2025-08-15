@@ -24,11 +24,12 @@ export class MessageManager {
     this.segmentedAudioQueue = new AudioQueue(); // 分段音频队列
     this.bubbleDisplayTimer = null; // 气泡显示计时器
     this.maxBubbleDisplayTime = 30000; // 最大气泡显示时间（30秒）
-    this.voiceEnabled = true; // 语音功能开关
+    this.voiceEnabled = false; // 语音功能开关，默认关闭
 
     this.initContainer();
     this.setupUserInteractionDetection();
     this.setupVoiceSettingListener();
+    this.loadInitialVoiceSetting();
   }
 
   /**
@@ -53,6 +54,20 @@ export class MessageManager {
       console.log('[MessageManager] Voice setting changed:', data.enabled);
       this.voiceEnabled = data.enabled;
     });
+  }
+
+  /**
+   * Load initial voice setting from main process
+   */
+  async loadInitialVoiceSetting() {
+    try {
+      const voiceStatus = await window.electronAPI.getVoiceStatus();
+      this.voiceEnabled = voiceStatus.enabled;
+      console.log('[MessageManager] Initial voice setting loaded:', this.voiceEnabled);
+    } catch (error) {
+      console.error('[MessageManager] Failed to load initial voice setting:', error);
+      // Keep default value (false)
+    }
   }
 
   /**

@@ -196,6 +196,23 @@ export const RENDERING_CONFIG = {
   }
 };
 
+// ==================== 应用设置配置 ====================
+export const SETTINGS_CONFIG = {
+  // 设置文件路径
+  SETTINGS_FILE: './data/settings.json',
+
+  // 默认设置
+  DEFAULTS: {
+    voice: {
+      enabled: false  // 默认关闭语音功能
+    },
+    ui: {
+      alwaysOnTop: true,
+      theme: 'light'
+    }
+  }
+};
+
 // ==================== TTS 配置 ====================
 export const TTS_CONFIG = {
   // Fish Speech API配置
@@ -308,6 +325,7 @@ export default {
   MEMORY: MEMORY_CONFIG,
   RENDERING: RENDERING_CONFIG,
   TTS: TTS_CONFIG,
+  SETTINGS: SETTINGS_CONFIG,
   LOGGING: LOGGING_CONFIG,
 
   // 工具函数
