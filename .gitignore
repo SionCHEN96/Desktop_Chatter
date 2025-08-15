@@ -156,3 +156,11 @@ fish-speech-test/.cache/
 # Model outputs
 fish-speech-test/outputs/
 fish-speech-test/generated/
+
+# ChromaDB data directory
+data/
+data/chroma/
+# Generated audio files
+fish-speech-test/generated_audio/
+# User settings and application data
+settings.json

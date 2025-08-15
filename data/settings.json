@@ -1,9 +1,0 @@
-{
-  "voice": {
-    "enabled": false
-  },
-  "ui": {
-    "alwaysOnTop": true,
-    "theme": "light"
-  }
-}
